@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: game-ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   test-and-build:
@@ -47,3 +47,18 @@ jobs:
 
       - name: Build production application
         run: pnpm build
+
+      - name: Deploy production from main
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Set the CLOUDFLARE_API_TOKEN repository secret before enabling deployment."
+            exit 1
+          fi
+          node scripts/prepare-cloudflare-deploy.mjs
+          pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/github-deploy.json
+          pnpm exec wrangler deploy --config dist/server/github-deploy.json
