@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import ts from 'typescript';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dalmuti-ai-'));
 try{
-for(const file of ['strategy','game']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
-const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action}=await import('file://'+dir+'/game.mjs');
+for(const file of ['strategy','game','client-state']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
+const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action,setTestScenario,view}=await import('file://'+dir+'/game.mjs');
 const move=(hand,pile=[],opponentCounts=[10,10,10],lastPlayerCount=10)=>chooseMove({hand,pile,opponentCounts,lastPlayerCount});
 assert.deepEqual(move([3,3,3,9,10]),[3,3,3]);
 assert.deepEqual(move([4,13],[5,5]),[4,13]);
@@ -20,6 +20,17 @@ action(lobby,'human1','add-bot');action(lobby,'human1','add-bot');assert.equal(l
 action(lobby,'human1','remove-bot');assert.equal(lobby.players.length,3);assert.equal(lobby.players.filter(p=>!p.bot).length,2);
 for(let i=0;i<5;i++)action(lobby,'human1','add-bot');assert.equal(lobby.players.length,8);assert.equal(new Set(lobby.players.map(p=>p.id)).size,8);assert.throws(()=>action(lobby,'human1','add-bot'),/full/);
 action(lobby,'human1','start');bots(lobby);assert.equal(lobby.players.reduce((n,p)=>n+p.hand.length,0)<=80,true);if(lobby.phase==='revolution'){const holder=lobby.players.find(p=>p.hand.filter(c=>c===13).length===2);action(lobby,holder?.id||lobby.host,'accept');bots(lobby)}if(lobby.phase==='tax'){for(const [i,p] of lobby.players.slice(0,2).entries())if(!lobby.tax[p.id])action(lobby,p.id,'tax',p.hand.slice(0,i===0?2:1));bots(lobby)}assert.equal(lobby.phase,'playing');assert(!lobby.players[lobby.turn].bot);assert.throws(()=>action(lobby,'human1','remove-bot'),/before the game/);
+const {acceptSnapshot}=await import('file://'+dir+'/client-state.mjs');
+assert.equal(acceptSnapshot({code:'A',version:5},{code:'A',version:4},true).version,5);assert.equal(acceptSnapshot(null,{code:'A',version:4},true),null);assert.equal(acceptSnapshot({code:'B',version:1},{code:'A',version:4},true).code,'B');
+for(const scenario of ['tax','revolution','greater-revolution'])for(let n=4;n<=8;n++){
+const g={code:'TEST',host:'human',testMode:true,testScenario:scenario,players:Array.from({length:n},(_,i)=>({id:i===0?'human':'p'+i,name:'P'+i,hand:[],score:0,wins:0})),phase:'lobby',round:0,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:[]};
+assert.throws(()=>setTestScenario(g,'p1','tax'),/Only the host/);assert.throws(()=>setTestScenario(g,'human','invalid'),/Unknown/);start(g);
+assert.equal(g.players.reduce((s,p)=>s+p.hand.length,0),80);for(let r=1;r<=12;r++)assert.equal(g.players.flatMap(p=>p.hand).filter(c=>c===r).length,r);
+const host=g.players.find(p=>p.id==='human');if(scenario==='tax')assert(host.hand.filter(c=>c===13).length<=1);else assert.equal(host.hand.filter(c=>c===13).length,2);assert.equal(view(g,'human',42).version,42);
+assert.throws(()=>setTestScenario(g,'human','tax'),/before dealing/);
+if(scenario==='tax'){assert(!g.players.some(p=>p.hand.filter(c=>c===13).length===2));action(g,'human','accept');assert.equal(g.phase,'tax')}else{const last=g.players.at(-1).id;action(g,'human','revolution');assert.equal(g.phase,'playing');if(scenario==='greater-revolution'){assert.equal(last,'human');assert.equal(g.players[0].id,'human')}}
+}
+const normal={...lobby,phase:'lobby',testMode:false};assert.throws(()=>setTestScenario(normal,'human1','tax'),/only available/);
 for(let n=4;n<=8;n++)for(let trial=0;trial<20;trial++){
 const g={code:'TEST',host:'p0',players:Array.from({length:n},(_,i)=>({id:'p'+i,name:'P'+i,hand:[],bot:true,score:0,wins:0})),phase:'lobby',round:0,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:[]};
 for(let round=0;round<3;round++){start(g);assert.equal(g.players.reduce((sum,p)=>sum+p.hand.length,0),80);for(let step=0;step<100&&g.phase!=='results';step++)bots(g);assert.equal(g.phase,'results');assert.equal(new Set(g.finished).size,n)}}

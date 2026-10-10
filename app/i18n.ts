@@ -126,6 +126,36 @@ Object.assign(uk,{
 "Computer players can only be changed before the game starts.":"Додавати й прибирати комп’ютерних гравців можна лише до початку гри.",
 "There are no computer players to remove.":"У кімнаті немає комп’ютерних гравців."
 });
+Object.assign(uk,{
+  "Testing tools": "Інструменти тестування",
+  "Create a separate test room with predictable deals. Invite another person and add computers as needed.": "Створіть окрему тестову кімнату з передбачуваною роздачею. Запросіть іншого гравця й додайте комп’ютерних гравців за потреби.",
+  "Create test room": "Створити тестову кімнату",
+  "Test room · predictable deals": "Тестова кімната · передбачувана роздача",
+  "This room is for testing. The host receives the Jesters in revolution scenarios.": "Ця кімната для тестування. У сценаріях революції обох блазнів отримує організатор.",
+  "Next deal": "Наступна роздача",
+  "Taxation · split Jesters": "Податки · блазні в різних гравців",
+  "Revolution · host has both Jesters": "Революція · обидва блазні в організатора",
+  "Greater revolution · host is Greater Peon": "Велика революція · організатор — Великий селянин",
+  "Diagnostics": "Діагностика",
+  "Game version": "Версія гри",
+  "Phase": "Етап",
+  "Last successful sync": "Остання успішна синхронізація",
+  "Response time": "Час відповіді",
+  "Last error": "Остання помилка",
+  "Copy diagnostic report": "Копіювати звіт",
+  "Reports include player names and card counts, never cards or session tokens.": "Звіт містить імена й кількість карт, але не самі карти чи секретні токени.",
+  "Diagnostic report copied!": "Діагностичний звіт скопійовано!",
+  "Could not copy the report. Please take a screenshot of Diagnostics.": "Не вдалося скопіювати звіт. Зробіть знімок панелі діагностики.",
+  "Test controls are only available in test rooms.": "Тестові налаштування доступні лише в тестових кімнатах.",
+  "Only the host can choose a test scenario.": "Лише організатор може обрати тестовий сценарій.",
+  "Choose a test scenario before dealing.": "Оберіть тестовий сценарій до роздачі.",
+  "Unknown test scenario.": "Невідомий тестовий сценарій.",
+  "lobby": "Очікування гравців",
+  "revolution": "Вибір революції",
+  "tax": "Податки",
+  "playing": "Гра",
+  "results": "Результати"
+});
 export const ukLabels=['','Далмуті','Архієпископ','Маршал','Баронеса','Абатиса','Лицар','Швачка','Муляр','Кухар','Пастушка','Каменяр','Селянин','Блазень'];
 export function countLabel(n:number,lang:Language,kind:'card'|'crown',accusative=false){if(lang==='nl')return n+' '+(kind==='card'?(n===1?'kaart':'kaarten'):(n===1?'kroon':'kronen'));if(lang==='en')return n+' '+(kind==='card'?'card':'crown')+(n===1?'':'s');const forms=kind==='card'?[accusative?'карту':'карта','карти','карт']:['корона','корони','корон'];const category=new Intl.PluralRules('uk').select(n);return n+' '+forms[category==='one'?0:category==='few'?1:2]}
 export function translate(text:string,lang:Language):string{if(lang==='en')return text;const dictionary=lang==='nl'?nl:uk;if(dictionary[text])return dictionary[text];for(const [pattern,replace] of (lang==='nl'?nlDynamic:dynamic)){const match=text.match(pattern);if(match)return replace(match)}return text}

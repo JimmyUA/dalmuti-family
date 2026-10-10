@@ -19,6 +19,36 @@ export const nl:Record<string,string>={
 'Choose cards of one rank. Jesters are wild.':'Kies kaarten van dezelfde rang. Narren kunnen andere kaarten vervangen.','You need 4–8 players.':'Je hebt 4–8 spelers nodig.','Player not found.':'Speler niet gevonden.','Only the host can deal.':'Alleen de gastheer kan de kaarten delen.','The revolution window has closed.':'Een revolutie uitroepen kan nu niet meer.','Both Jesters are needed.':'Je hebt beide Narren nodig.','Waiting for the player with both Jesters.':'We wachten op de speler met beide Narren.','Waiting for the host.':'We wachten op de gastheer.','Only the Dalmutis choose tax cards.':'Alleen de Dalmuti’s kiezen ruilkaarten.','Already submitted.':'Je keuze is al bevestigd.','Wait for your turn.':'Wacht op je beurt.','Play the same number of cards with a lower rank.':'Speel evenveel kaarten van een lagere rang.','Lead with cards to start the trick.':'Speel kaarten om de slag te beginnen.','Unknown action.':'Onbekende actie.','Those cards are not in your hand.':'Die kaarten zitten niet in je hand.','Invalid player session.':'Ongeldige spelerssessie. Vernieuw de pagina.','Room not found. Check the six-character code.':'Kamer niet gevonden. Controleer de code van zes tekens.','This table is full or already playing.':'De tafel is vol of het spel is al begonnen.','Join this room first.':'Neem eerst deel aan deze kamer.','Another player just moved. Please try again.':'Een andere speler heeft net gespeeld. Probeer het opnieuw.','Welcome to your family table.':'Welkom aan je familietafel!','Greater revolution! All ranks reversed.':'Grote revolutie! De rangorde is omgekeerd.','Revolution! No taxes this round.':'Revolutie! Geen belasting deze ronde.','Taxation · Dalmutis choose their return cards':'Belasting · de Dalmuti’s kiezen hun ruilkaarten','Failed to fetch':'Geen verbinding met de server. Controleer je internetverbinding.',
 'Add computer player':'Voeg computerspeler toe','Remove computer player':'Verwijder computerspeler','Only two of you? Add two computer players to start.':'Zijn jullie met z’n tweeën? Voeg twee computerspelers toe om te beginnen.','The table is full.':'De tafel is vol.','Only the host can manage computer players.':'Alleen de gastheer kan computerspelers toevoegen of verwijderen.','Computer players can only be changed before the game starts.':'Je kunt computerspelers alleen toevoegen of verwijderen voordat het spel begint.','There are no computer players to remove.':'Er zijn geen computerspelers om te verwijderen.'
 };
+Object.assign(nl,{
+  "Testing tools": "Testhulpmiddelen",
+  "Create a separate test room with predictable deals. Invite another person and add computers as needed.": "Maak een aparte testkamer met voorspelbare kaartverdelingen. Nodig iemand uit en voeg zo nodig computerspelers toe.",
+  "Create test room": "Maak een testkamer",
+  "Test room · predictable deals": "Testkamer · voorspelbare kaartverdeling",
+  "This room is for testing. The host receives the Jesters in revolution scenarios.": "Deze kamer is bedoeld om te testen. Bij revolutiescenario’s krijgt de gastheer beide Narren.",
+  "Next deal": "Volgende verdeling",
+  "Taxation · split Jesters": "Belasting · Narren verdeeld",
+  "Revolution · host has both Jesters": "Revolutie · gastheer heeft beide Narren",
+  "Greater revolution · host is Greater Peon": "Grote revolutie · gastheer is Grote Dienaar",
+  "Diagnostics": "Diagnostiek",
+  "Game version": "Spelversie",
+  "Phase": "Fase",
+  "Last successful sync": "Laatste geslaagde synchronisatie",
+  "Response time": "Responstijd",
+  "Last error": "Laatste fout",
+  "Copy diagnostic report": "Kopieer diagnostisch rapport",
+  "Reports include player names and card counts, never cards or session tokens.": "Rapporten bevatten namen en kaartaantallen, maar geen kaarten of sessietokens.",
+  "Diagnostic report copied!": "Diagnostisch rapport gekopieerd!",
+  "Could not copy the report. Please take a screenshot of Diagnostics.": "Kopiëren is mislukt. Maak een schermafbeelding van Diagnostiek.",
+  "Test controls are only available in test rooms.": "Testinstellingen zijn alleen beschikbaar in testkamers.",
+  "Only the host can choose a test scenario.": "Alleen de gastheer kan een testscenario kiezen.",
+  "Choose a test scenario before dealing.": "Kies een testscenario voordat de kaarten worden gedeeld.",
+  "Unknown test scenario.": "Onbekend testscenario.",
+  "lobby": "Wachtruimte",
+  "revolution": "Revolutiekeuze",
+  "tax": "Belasting",
+  "playing": "Spelen",
+  "results": "Resultaten"
+});
 export const nlLabels=['','Dalmuti','Aartsbisschop','Maarschalk','Barones','Abdis','Ridder','Naaister','Metselaar','Kok','Herderin','Steenhouwer','Boer','Nar'];
 export const nlDynamic:Array<[RegExp,(m:RegExpMatchArray)=>string]>=[
 [/^(.*) joined as a computer player$/,m=>m[1]+' doet mee als computerspeler'],[/^(.*) left the table$/,m=>m[1]+' heeft de tafel verlaten'],[/^Round (\d+) · cards dealt$/,m=>'Ronde '+m[1]+' · kaarten gedeeld'],[/^(.*) leads the round$/,m=>m[1]+' begint de ronde'],[/^(.*) played (\d+) × (.*)$/,m=>m[1]+' speelt '+m[2]+' × '+(m[3]==='Jester'?'Nar':m[3])],[/^(.*) finished #(\d+)$/,m=>m[1]+' is uit op plaats '+m[2]],[/^(.*) passed$/,m=>m[1]+' past'],[/^(.*) won the trick and leads$/,m=>m[1]+' wint de slag en begint de volgende'],[/^Choose (\d+) cards\.$/,m=>'Kies '+m[1]+(m[1]==='1'?' kaart.':' kaarten.')],[/^Share room code (.*)$/,m=>'Deel de kamercode '+m[1]]
