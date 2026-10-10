@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import ts from 'typescript';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dalmuti-ai-'));
+try{
+for(const file of ['strategy','game']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
+const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action}=await import('file://'+dir+'/game.mjs');
+const move=(hand,pile=[],opponentCounts=[10,10,10],lastPlayerCount=10)=>chooseMove({hand,pile,opponentCounts,lastPlayerCount});
+assert.deepEqual(move([3,3,3,9,10]),[3,3,3]);
+assert.deepEqual(move([4,13],[5,5]),[4,13]);
+assert.deepEqual(move([6,6,10,10,12,12],[7]),[]); // save pairs in a safe trick
+assert.deepEqual(move([6,6,10,10,12,12],[7],[1,10,10]),[6]); // intervene against a short hand
+assert.equal(move([3,13,9,9],[4]).includes(13),false);
+assert.deepEqual(move([9,10],[4]),[]);
+assert.deepEqual(chooseTax([1,3,3,12],1),[12]);
+assert.deepEqual(chooseTax([1,4,4,12,12],2),[12,12]);
+assert.equal(shouldRevolt(0),false);assert.equal(shouldRevolt(3),true);
+const lobby={code:'FAMILY',host:'human1',players:['human1','human2'].map(id=>({id,name:id,hand:[],score:0,wins:0})),phase:'lobby',round:0,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:[]};
+assert.throws(()=>action(lobby,'human2','add-bot'),/Only the host/);
+action(lobby,'human1','add-bot');action(lobby,'human1','add-bot');assert.equal(lobby.players.length,4);assert.equal(lobby.players.filter(p=>p.bot).length,2);
+action(lobby,'human1','remove-bot');assert.equal(lobby.players.length,3);assert.equal(lobby.players.filter(p=>!p.bot).length,2);
+for(let i=0;i<5;i++)action(lobby,'human1','add-bot');assert.equal(lobby.players.length,8);assert.equal(new Set(lobby.players.map(p=>p.id)).size,8);assert.throws(()=>action(lobby,'human1','add-bot'),/full/);
+action(lobby,'human1','start');bots(lobby);assert.equal(lobby.players.reduce((n,p)=>n+p.hand.length,0)<=80,true);if(lobby.phase==='revolution'){const holder=lobby.players.find(p=>p.hand.filter(c=>c===13).length===2);action(lobby,holder?.id||lobby.host,'accept');bots(lobby)}if(lobby.phase==='tax'){for(const [i,p] of lobby.players.slice(0,2).entries())if(!lobby.tax[p.id])action(lobby,p.id,'tax',p.hand.slice(0,i===0?2:1));bots(lobby)}assert.equal(lobby.phase,'playing');assert(!lobby.players[lobby.turn].bot);assert.throws(()=>action(lobby,'human1','remove-bot'),/before the game/);
+for(let n=4;n<=8;n++)for(let trial=0;trial<20;trial++){
+const g={code:'TEST',host:'p0',players:Array.from({length:n},(_,i)=>({id:'p'+i,name:'P'+i,hand:[],bot:true,score:0,wins:0})),phase:'lobby',round:0,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:[]};
+for(let round=0;round<3;round++){start(g);assert.equal(g.players.reduce((sum,p)=>sum+p.hand.length,0),80);for(let step=0;step<100&&g.phase!=='results';step++)bots(g);assert.equal(g.phase,'results');assert.equal(new Set(g.finished).size,n)}}
+for(let i=0;i<1000;i++){const hand=Array.from({length:1+Math.floor(Math.random()*20)},()=>1+Math.floor(Math.random()*13)),pile=Math.random()<.5?[]:Array(1+Math.floor(Math.random()*5)).fill(1+Math.floor(Math.random()*13));const selected=move(hand,pile);if(!selected.length){assert(pile.length);continue}const copy=[...hand];for(const c of selected){assert(copy.includes(c));copy.splice(copy.indexOf(c),1)}if(pile.length){assert.equal(selected.length,pile.length);assert(rank(selected)<rank(pile))}}
+console.log('Passed: strategic choices, legal moves, and 300 complete rounds for 4–8 players.');
+}finally{fs.rmSync(dir,{recursive:true,force:true})}
