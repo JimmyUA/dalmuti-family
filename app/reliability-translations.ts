@@ -1,0 +1,28 @@
+export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
+  uk: {
+    'Restoring your room…': 'Відновлюємо вашу кімнату…',
+    'Cancel room recovery': 'Скасувати відновлення кімнати',
+    'Waiting for confirmation of your last action.': 'Очікуємо підтвердження вашої останньої дії.',
+    'The game changed. Review the table and try again.': 'Стан гри змінився. Перевірте стіл і спробуйте ще раз.',
+    'Please refresh the page to update the game.': 'Оновіть сторінку, щоб завантажити нову версію гри.',
+    'This request ID was already used for a different action.': 'Цей запит уже використано для іншої дії. Оновіть сторінку.',
+    'Room code collision. Please create a new room.': 'Цей код кімнати вже зайнято. Створіть нову кімнату.',
+    'Device storage is unavailable. Enable storage to play safely.': 'Сховище пристрою недоступне. Дозвольте збереження даних для безпечної гри.',
+    'Could not restore the pending action.': 'Не вдалося відновити непідтверджену дію.',
+    'Pending action': 'Непідтверджена дія',
+    'Yes': 'Так', 'No': 'Ні',
+  },
+  nl: {
+    'Restoring your room…': 'Je kamer wordt hersteld…',
+    'Cancel room recovery': 'Herstellen annuleren',
+    'Waiting for confirmation of your last action.': 'We wachten op bevestiging van je laatste actie.',
+    'The game changed. Review the table and try again.': 'Het spel is veranderd. Controleer de tafel en probeer het opnieuw.',
+    'Please refresh the page to update the game.': 'Vernieuw de pagina om het spel bij te werken.',
+    'This request ID was already used for a different action.': 'Dit verzoek is al voor een andere actie gebruikt. Vernieuw de pagina.',
+    'Room code collision. Please create a new room.': 'Deze kamercode is al in gebruik. Maak een nieuwe kamer.',
+    'Device storage is unavailable. Enable storage to play safely.': 'Apparaatopslag is niet beschikbaar. Sta opslag toe om veilig te spelen.',
+    'Could not restore the pending action.': 'De onbevestigde actie kon niet worden hersteld.',
+    'Pending action': 'Onbevestigde actie',
+    'Yes': 'Ja', 'No': 'Nee',
+  },
+};

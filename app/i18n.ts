@@ -1,3 +1,4 @@
+import { reliabilityDictionary } from './reliability-translations';
 import {nl,nlDynamic} from './dutch';
 export type Language = "en" | "uk" | "nl";
 const uk:Record<string,string>={
@@ -158,7 +159,7 @@ Object.assign(uk,{
 });
 export const ukLabels=['','Далмуті','Архієпископ','Маршал','Баронеса','Абатиса','Лицар','Швачка','Муляр','Кухар','Пастушка','Каменяр','Селянин','Блазень'];
 export function countLabel(n:number,lang:Language,kind:'card'|'crown',accusative=false){if(lang==='nl')return n+' '+(kind==='card'?(n===1?'kaart':'kaarten'):(n===1?'kroon':'kronen'));if(lang==='en')return n+' '+(kind==='card'?'card':'crown')+(n===1?'':'s');const forms=kind==='card'?[accusative?'карту':'карта','карти','карт']:['корона','корони','корон'];const category=new Intl.PluralRules('uk').select(n);return n+' '+forms[category==='one'?0:category==='few'?1:2]}
-export function translate(text:string,lang:Language):string{if(lang==='en')return text;const dictionary=lang==='nl'?nl:uk;if(dictionary[text])return dictionary[text];for(const [pattern,replace] of (lang==='nl'?nlDynamic:dynamic)){const match=text.match(pattern);if(match)return replace(match)}return text}
+export function translate(text:string,lang:Language):string{if(lang==='en')return text;if(reliabilityDictionary[lang][text])return reliabilityDictionary[lang][text];const dictionary=lang==='nl'?nl:uk;if(dictionary[text])return dictionary[text];for(const [pattern,replace] of (lang==='nl'?nlDynamic:dynamic)){const match=text.match(pattern);if(match)return replace(match)}return text}
 const dynamic:Array<[RegExp,(m:RegExpMatchArray)=>string]>=[
 [/^(.*) joined as a computer player$/,m=>m[1]+' приєднується як комп’ютерний гравець'],
 [/^(.*) left the table$/,m=>m[1]+' залишає стіл'],

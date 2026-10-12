@@ -1,5 +1,9 @@
 import { env } from 'cloudflare:workers';
-import { action,bots,view,addComputer,setTestScenario, type Game } from '../../game';
-const json=(data:any,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
-export async function POST(req:Request){try{const b=await req.json();const db=env.DB!;if(typeof b.id!=='string'||b.id.length<20)throw Error('Invalid player session.');const code=String(b.code||'').toUpperCase();if(b.type==='create'){const code=crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase();const g:Game={code,host:b.id,players:[{id:b.id,name:String(b.name||'Player').slice(0,24),hand:[],score:0,wins:0}],phase:'lobby',round:0,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:['Welcome to your family table.'],testMode:b.testMode===true,...(b.testMode===true?{testScenario:'tax' as const}:{})};if(b.practice)for(let i=0;i<3;i++)addComputer(g);await db.prepare('INSERT INTO rooms (code,state,version) VALUES (?,?,0)').bind(code,JSON.stringify(g)).run();return json(view(g,b.id))}
-const row=await db.prepare('SELECT state,version FROM rooms WHERE code=?').bind(code).first<{state:string,version:number}>();if(!row)return json({error:'Room not found. Check the six-character code.'},404);const g:Game=JSON.parse(row.state);if(b.type==='join'){if(!g.players.some(p=>p.id===b.id)){if(g.phase!=='lobby'||g.players.length>=8)throw Error('This table is full or already playing.');g.players.push({id:b.id,name:String(b.name||'Player').slice(0,24),hand:[],score:0,wins:0})}}else if(!g.players.some(p=>p.id===b.id))throw Error('Join this room first.');else if(b.type==='poll')return json(view(g,b.id,row.version));else if(b.type==='set-scenario')setTestScenario(g,b.id,b.scenario);else action(g,b.id,b.type,b.cards);bots(g);const result=await db.prepare('UPDATE rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(g),code,row.version).run();if(!result.meta.changes)return json({error:'Another player just moved. Please try again.'},409);return json(view(g,b.id,row.version+1))}catch(e:any){return json({error:e.message||'Could not connect.'},400)}}
+import { handleGameRequest } from '../../game-service';
+export async function POST(request: Request) {
+  let body;
+  try { body = await request.json(); }
+  catch { return Response.json({ error: 'Unknown action.' }, { status: 400 }); }
+  try { return await handleGameRequest(env.DB!, body); }
+  catch { return Response.json({ error: 'Could not connect.' }, { status: 503, headers: { 'Cache-Control': 'no-store' } }); }
+}

@@ -45,9 +45,11 @@ jobs:
       - name: Test game rules, strategy and reliability scenarios
         run: node tests/strategy.mjs
 
+      - name: Test reconnects and retry-safe actions
+        run: node tests/reliability.mjs
+
       - name: Build production application
         run: pnpm build
-
       - name: Deploy production from main
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
         env:
@@ -62,3 +64,4 @@ jobs:
           node scripts/prepare-cloudflare-deploy.mjs
           pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/github-deploy.json
           pnpm exec wrangler deploy --config dist/server/github-deploy.json
+

@@ -21,7 +21,7 @@ Test rooms are visibly labeled and deliberately use predictable distributions. T
 - Finish three consecutive rounds; verify rankings, points, taxes and whose turn it is.
 - Attempt an invalid set; confirm a translated error with no lost cards or turn change.
 - Pass and then play on a later legal turn.
-- Refresh during your turn; rejoin the same code on the same device.
+- Refresh during your turn; confirm the same room, seat and hand restore automatically.
 - Background the browser, lock the phone, and return.
 - Briefly disable internet, then reconnect.
 - Tap Play repeatedly and check that only one move applies.
@@ -38,4 +38,4 @@ Different versions may be normal briefly while updates propagate. Persistent dis
 
 `node tests/strategy.mjs` checks strategic decisions, legal moves, full rounds, test-room permissions, scenario deck integrity and stale-response handling.
 
-These checks do not replace real-device testing. Host transfer, automatic seat recovery, action idempotency and paced bot turns remain future reliability work.
+These checks do not replace real-device testing. Automatic seat recovery and action idempotency are now covered by `node tests/reliability.mjs`. Host transfer and paced bot turns remain future lifecycle/gameplay work.
