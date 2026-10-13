@@ -53,7 +53,10 @@ export default defineConfig(async ({ command }) => {
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
+  const release=process.env.GITHUB_SHA || 'development';
+  if(release!=='development'&&!/^[a-f0-9]{40}$/i.test(release))throw new Error('Invalid GITHUB_SHA');
   return {
+    define:{__RELEASE_SHA__:JSON.stringify(release)},
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }

@@ -1,7 +1,7 @@
 import { acceptSnapshot } from './client-state';
 export type Snapshot = { code: string; version: number; round: number; players: Array<{ id: string; hand: number[]; [key: string]: any }>; [key: string]: any };
 export type PendingAction = { type: string; id: string; code?: string; name?: string; requestId: string; expectedVersion?: number; [key: string]: any };
-export type ConnectionState = { game: Snapshot | null; id: string; name: string; code: string; connected: boolean; busy: boolean; restoring: boolean; pending: boolean; lastSync: number | null; latency: number | null; lastError: string; error: string };
+export type ConnectionState = { game: Snapshot | null; id: string; name: string; code: string; connected: boolean; busy: boolean; restoring: boolean; pending: boolean; lastSync: number | null; latency: number | null; lastError: string; error: string; lastTraceId?:string; serverRelease?:string };
 type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 type Reply = { status: number; data: any };
 export type Dependencies = { storage: Storage; transport: (body: any) => Promise<Reply>; uuid: () => string; now: () => number; schedule: (fn: () => void, delay: number) => any; cancel: (timer: any) => void };
@@ -115,6 +115,7 @@ export class GameConnection {
     try {
       const { status, data } = await this.deps.transport(body);
       if (epoch !== this.epoch || this.stopped) return;
+      this.emit({lastTraceId:typeof data?.traceId==='string'?data.traceId:this.state.lastTraceId,serverRelease:typeof data?.serverRelease==='string'?data.serverRelease:this.state.serverRelease});
       if(status===429)retryAfter=60_000;
       if (status >= 500 || status === 429) throw new Error(data?.error || 'Could not connect.');
       if (status >= 400 || data?.error) {
@@ -165,6 +166,6 @@ export async function browserTransport(body: any): Promise<Reply> {
   const timeout = setTimeout(() => abort.abort(), 10_000);
   try {
     const result = await fetch('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: abort.signal });
-    return { status: result.status, data: await result.json() };
+    const data=await result.json();data.serverRelease=result.headers.get('X-Release-SHA')||data.serverRelease;data.traceId=result.headers.get('X-Request-ID')||undefined;return { status: result.status, data };
   } finally { clearTimeout(timeout); }
 }

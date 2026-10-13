@@ -57,11 +57,13 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
         run: |
+          set -euo pipefail
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
             echo "::error::Set the CLOUDFLARE_API_TOKEN repository secret before enabling deployment."
             exit 1
           fi
           node scripts/prepare-cloudflare-deploy.mjs
           pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/github-deploy.json
-          pnpm exec wrangler deploy --config dist/server/github-deploy.json
+          pnpm exec wrangler deploy --config dist/server/github-deploy.json | tee /tmp/dalmuti-deploy.log
+          node scripts/smoke-check.mjs /tmp/dalmuti-deploy.log
 

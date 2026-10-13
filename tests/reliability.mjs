@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dalmuti-reliability-'));
 const databases = [];
 try {
-  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security']) {
+  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security','monitoring','health']) {
     const source = fs.readFileSync('app/' + file + '.ts', 'utf8');
     const output = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
@@ -213,7 +213,7 @@ try {
   assert.equal(table.players.find(p=>p.id===hostId).bot,false);
 
   const {validateRequest}=await import('file://'+dir+'/request-validation.mjs');
-  const {secureGameRequest,BODY_LIMIT}=await import('file://'+dir+'/security.mjs');
+  const {secureGameRequest:rawSecureGameRequest,BODY_LIMIT}=await import('file://'+dir+'/security.mjs');
   const valid={type:'play',id,requestId:crypto.randomUUID(),code:'ABC123',expectedVersion:1,cards:[4,4]};
   for(const invalid of [null,[],{}, {...valid,id:'bot-1'}, {...valid,type:'unknown'}, {...valid,cards:[]}, {...valid,cards:[0]}, {...valid,cards:[14]}, {...valid,cards:[2.5]}, {...valid,cards:Array(81).fill(4)}, {...valid,cards:'4'}, {...valid,expectedVersion:-1}, {...valid,expectedVersion:'1'}, {...valid,expectedVersion:Number.MAX_SAFE_INTEGER+1}, {...valid,host:true}, {...valid,name:'x'.repeat(25)}, {...valid,name:'x\n'}, {...valid,code:'123'}, {...valid,type:'pass'}, {...valid,type:'replace-player',cards:undefined,target:99}, {...valid,type:'poll'}])assert.throws(()=>validateRequest(invalid));
   assert.equal(validateRequest(valid).cards.length,2);
@@ -221,6 +221,7 @@ try {
   const securityDb=database();let dbAccess=0;
   const spyDb={prepare(sql){dbAccess++;return securityDb.db.prepare(sql)}};
   function limiter(limit){const counts=new Map();return {counts,async limit({key}){const n=(counts.get(key)||0)+1;counts.set(key,n);return {success:n<=limit}}}}
+  const logRecords=[];const secureGameRequest=(req,env)=>rawSecureGameRequest(req,env,record=>logRecords.push(record),()=>0.5);
   const makeEnv=()=>({DB:spyDb,NETWORK_LIMIT:limiter(600),SESSION_LIMIT:limiter(120),CREATE_LIMIT:limiter(10),JOIN_LIMIT:limiter(40)});
   const http=(body,headers={})=>new Request('https://game.example/api/game',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1',...headers},body:typeof body==='string'?body:JSON.stringify(body)});
   let limits=makeEnv();
@@ -249,6 +250,28 @@ try {
   const state=JSON.parse(permissionDb.sqlite.prepare('SELECT state FROM rooms').get().state);const bot=state.players.find(p=>p.bot);
   assert.equal((await call(permissionDb.db,{type:'poll',id:bot.id,code:room.code})).status,400);
   assert(!JSON.stringify(room).includes(owner));
+  const {progressStatus,RELEASE}=await import('file://'+dir+'/monitoring.mjs');
+  const {health}=await import('file://'+dir+'/health.mjs');
+  const live={phase:'playing',turn:0,players:[{id:'seat',presence:'online'}]};
+  assert.equal(progressStatus(live,1000,1000+299999),'normal');assert.equal(progressStatus(live,1000,1000+300000),'no-progress');
+  assert.equal(progressStatus({...live,players:[{id:'seat',presence:'offline'}]},1000,1000+300000),'waiting-for-player');
+  assert.equal(progressStatus({...live,phase:'results'},1000,1000+300000),'normal');
+  assert.equal((await health(makeEnv())).status,200);
+  assert.equal((await health({})).status,503);
+  assert.equal((await health({...makeEnv(),DB:{prepare(){throw Error('private database message')}}})).status,503);
+  assert(logRecords.some(r=>r.status===429));assert(logRecords.some(r=>r.status===503));
+  const logged=JSON.stringify(logRecords);assert(!logged.includes(id));assert(!logged.includes('192.0.2.1'));assert(!logged.includes('Person'));assert(!logged.includes('cards'));
+  const redact=makeEnv();const privateId=crypto.randomUUID();
+  const checked=await rawSecureGameRequest(http({type:'create',id:privateId,requestId:privateId,name:'SecretName'}),redact,record=>logRecords.push(record));
+  assert.equal(checked.headers.get('X-Release-SHA'),RELEASE);assert(checked.headers.get('X-Request-ID'));assert(!JSON.stringify(logRecords).includes(privateId));assert(!JSON.stringify(logRecords).includes('SecretName'));
+  const healthy=await health(makeEnv());assert.equal((await healthy.json()).release,RELEASE);
+  const {deploymentUrl,checkDeployment}=await import('../scripts/smoke-check.mjs');
+  assert.equal(deploymentUrl('Worker: https://dalmuti-family.family.workers.dev'),'https://dalmuti-family.family.workers.dev');
+  assert.throws(()=>deploymentUrl('No URL'));
+  const mockFetch=async(url,options)=>String(url).includes('/api/health')?Response.json({status:'ok',release:'expected',checks:{database:true,rateLimits:true}}):String(url).includes('/api/game')?new Response('{}',{status:404,headers:{'X-Release-SHA':'expected'}}):new Response('DALMUTI',{status:200});
+  await checkDeployment('https://dalmuti-family.family.workers.dev','expected',mockFetch);
+  await assert.rejects(()=>checkDeployment('https://dalmuti-family.family.workers.dev','wrong',mockFetch));
+  console.log('Passed: release headers, schema health checks, inactivity classification and log redaction.');
   console.log('Passed: strict validation, HTTP/body/origin guards, rate limits, private-token redaction and host/seat permissions.');
 
   console.log('Passed: real SQL duplicate/concurrent actions, stale versions, lost responses, reload recovery, request serialization, foreground/offline wakeups and safe hand selection.');

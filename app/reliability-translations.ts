@@ -61,3 +61,13 @@ Object.assign(reliabilityDictionary.nl,{
 'Game request is too large.':'Het spelverzoek is te groot.',
 'Too many requests. Please wait a minute.':'Te veel verzoeken. Wacht een minuut.'
 });
+Object.assign(reliabilityDictionary.uk,{
+'Browser release':'Версія браузерного застосунку','Server release':'Версія сервера','Progress':'Перебіг гри',
+'normal':'Без затримок','waiting-for-player':'Очікуємо відсутнього гравця','no-progress':'Понад 5 хвилин без змін',
+'A new release is available. Refresh when your pending action is confirmed.':'Доступна нова версія. Оновіть сторінку після підтвердження останньої дії.'
+});
+Object.assign(reliabilityDictionary.nl,{
+'Browser release':'Browserversie','Server release':'Serverversie','Progress':'Spelvoortgang',
+'normal':'Normaal','waiting-for-player':'Wachten op afwezige speler','no-progress':'Meer dan 5 minuten zonder voortgang',
+'A new release is available. Refresh when your pending action is confirmed.':'Er is een nieuwe versie. Vernieuw de pagina zodra je laatste actie is bevestigd.'
+});

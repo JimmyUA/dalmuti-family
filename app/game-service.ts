@@ -1,9 +1,10 @@
+import {monitoringSnapshot} from './monitoring';
 import {validateRequest} from './request-validation';
 import {status,transferHost,lifecycleAction,type Presence} from './lifecycle';
 import { action, bots, view, addComputer, setTestScenario, type Game } from './game';
 
 type Receipt = { player: string; fingerprint: string; version: number };
-type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string };
+type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number };
 type Row = { state: string; version: number };
 type Statement = { bind(...args: any[]): Statement; first<T>(): Promise<T | null>; run(): Promise<{ meta: { changes?: number } }> };
 export type Database = { prepare(sql: string): Statement };
@@ -13,8 +14,8 @@ const moves = new Set(['start', 'play', 'pass', 'tax', 'accept', 'revolution', '
 export const RECEIPT_LIMIT = 1024;
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const publicView = (game: StoredGame, id: string, version: number, presence:Presence={}, now=Date.now()) => {
-  const { receipts, creationKey, ...safe } = game;
-  const result=view(safe,id,version);return {...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};
+  const { receipts, creationKey,lastProgressAt, ...safe } = game;
+  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
 };
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
@@ -55,7 +56,7 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       code, host: request.id, players: [{ id: request.id, name: String(request.name || 'Player').slice(0, 24), hand: [], score: 0, wins: 0 }],
       phase: 'lobby', round: 0, turn: 0, pile: [], last: 0, passes: 0, finished: [], tax: {}, log: ['Welcome to your family table.'],
       testMode: request.testMode === true, ...(request.testMode === true ? { testScenario: 'tax' as const } : {}),
-      creationKey, receipts: { [request.requestId!]: { player: request.id, fingerprint, version: 0 } },
+      lastProgressAt:now,creationKey, receipts: { [request.requestId!]: { player: request.id, fingerprint, version: 0 } },
     };
     if (request.practice) for (let i = 0; i < 3; i++) addComputer(game);
     await db.prepare('INSERT INTO rooms (code,state,version) VALUES (?,?,0) ON CONFLICT(code) DO NOTHING').bind(code, JSON.stringify(game)).run();
@@ -81,7 +82,8 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       if(p.id===request.id&&!p.left)await db.prepare('UPDATE presence SET last_seen=? WHERE room=? AND player=? AND last_seen<=?').bind(now,code,p.id,now-10000).run();
       const seen=await db.prepare('SELECT last_seen FROM presence WHERE room=? AND player=?').bind(code,p.id).first<{last_seen:number}>();presence[p.id]=seen!.last_seen;
     }
-    if(transferHost(game,presence,now)){
+    const baseline=game.lastProgressAt===undefined;if(baseline)game.lastProgressAt=now;
+    if(transferHost(game,presence,now)||baseline){
       const changed=await db.prepare('UPDATE rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(game),code,row.version).run();
       continue;
     }
@@ -113,6 +115,7 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     } catch (error: any) {
       return response({ error: error.message || 'Unknown action.', snapshot: member ? publicView(JSON.parse(row.state), request.id, row.version) : undefined }, 400);
     }
+    if(!['join','leave-room'].includes(request.type))game.lastProgressAt=now;
     game.receipts ??= {};
     game.receipts[request.requestId!] = { player: request.id, fingerprint, version: row.version + 1 };
     const entries = Object.entries(game.receipts);
