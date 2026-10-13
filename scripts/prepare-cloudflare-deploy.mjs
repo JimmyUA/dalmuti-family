@@ -1,3 +1,4 @@
+import {rateLimits} from './rate-limit-config.mjs';
 import {readFileSync,writeFileSync} from 'node:fs';
 const account=process.env.CLOUDFLARE_ACCOUNT_ID;
 const database=process.env.CLOUDFLARE_D1_DATABASE_ID;
@@ -5,6 +6,6 @@ if(!account||!/^[a-f0-9]{32}$/i.test(account))throw new Error('Set CLOUDFLARE_AC
 if(!database||!/^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(database)||database==='00000000-0000-4000-8000-000000000000')throw new Error('Set CLOUDFLARE_D1_DATABASE_ID to the UUID of your production D1 database.');
 const source=JSON.parse(readFileSync('dist/server/wrangler.json','utf8'));
 if(!source.main||!source.assets)throw new Error('Run pnpm build before preparing deployment.');
-const config={...source,name:'dalmuti-family',account_id:account,workers_dev:true,d1_databases:[{binding:'DB',database_name:'dalmuti-family',database_id:database,migrations_dir:'../../drizzle'}]};
+const config={...source,name:'dalmuti-family',account_id:account,workers_dev:true,ratelimits:rateLimits,d1_databases:[{binding:'DB',database_name:'dalmuti-family',database_id:database,migrations_dir:'../../drizzle'}]};
 writeFileSync('dist/server/github-deploy.json',JSON.stringify(config,null,2)+'\n');
 console.log('Prepared Cloudflare deployment for dalmuti-family.');

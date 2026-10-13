@@ -1,3 +1,4 @@
+import {validateRequest} from './request-validation';
 import {status,transferHost,lifecycleAction,type Presence} from './lifecycle';
 import { action, bots, view, addComputer, setTestScenario, type Game } from './game';
 
@@ -30,6 +31,7 @@ function replay(game: StoredGame, request: GameRequest, fingerprint: string, ver
 }
 
 export async function handleGameRequest(db: Database, request: GameRequest, now=Date.now()): Promise<Response> {
+  try{request=validateRequest(request)}catch{return response({error:'Invalid game request.'},400)}
   if (!request || typeof request.id !== 'string' || !uuid.test(request.id)) {
     return response({ error: 'Invalid player session.' }, 400);
   }

@@ -111,9 +111,11 @@ export class GameConnection {
     const began = this.deps.now();
     this.inFlight = true;
     let retry = false;
+    let retryAfter=0;
     try {
       const { status, data } = await this.deps.transport(body);
       if (epoch !== this.epoch || this.stopped) return;
+      if(status===429)retryAfter=60_000;
       if (status >= 500 || status === 429) throw new Error(data?.error || 'Could not connect.');
       if (status >= 400 || data?.error) {
         if (data?.snapshot) this.adopt(data.snapshot);
@@ -143,7 +145,7 @@ export class GameConnection {
       }
     } finally {
       this.inFlight = false;
-      if (!this.stopped) this.schedule(this.immediate ? 0 : retry ? retryDelay(this.failures) : 1500);
+      if (!this.stopped) this.schedule(this.immediate ? 0 : retry ? Math.max(retryAfter,retryDelay(this.failures)) : 1500);
     }
   }
   dismissError() { this.emit({error:''}); }

@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dalmuti-reliability-'));
 const databases = [];
 try {
-  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle']) {
+  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security']) {
     const source = fs.readFileSync('app/' + file + '.ts', 'utf8');
     const output = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
@@ -144,6 +144,7 @@ try {
   await errorClient.tick(); const uncertain = errorStore.getItem(PENDING_KEY);
   assert(uncertain); assert.equal(errorClient.state.pending, true); assert.equal(errorDeps.timers.at(-1).delay, 1000);
   await errorClient.tick(); assert.equal(errorStore.getItem(PENDING_KEY), uncertain); assert.equal(errorDeps.timers.at(-1).delay, 2000);
+  errorStatus = 429; await errorClient.tick(); assert.equal(errorDeps.timers.at(-1).delay,60000); assert.equal(errorStore.getItem(PENDING_KEY),uncertain);
   errorStatus = 409; await errorClient.tick(); assert.equal(errorClient.state.pending, false); assert.equal(errorStore.getItem(PENDING_KEY), null);
 
   // One request at a time; immediate wake is queued behind the current request.
@@ -210,6 +211,45 @@ try {
   const stored=JSON.parse(life.sqlite.prepare('SELECT state FROM rooms WHERE code=?').get(table.code).state);stored.phase='results';life.sqlite.prepare('UPDATE rooms SET state=? WHERE code=?').run(JSON.stringify(stored),table.code);
   table=(await poll(hostId,time+121_000)).data;table=(await invoke(req('reclaim-seat',hostId),time+121_000)).data;
   assert.equal(table.players.find(p=>p.id===hostId).bot,false);
+
+  const {validateRequest}=await import('file://'+dir+'/request-validation.mjs');
+  const {secureGameRequest,BODY_LIMIT}=await import('file://'+dir+'/security.mjs');
+  const valid={type:'play',id,requestId:crypto.randomUUID(),code:'ABC123',expectedVersion:1,cards:[4,4]};
+  for(const invalid of [null,[],{}, {...valid,id:'bot-1'}, {...valid,type:'unknown'}, {...valid,cards:[]}, {...valid,cards:[0]}, {...valid,cards:[14]}, {...valid,cards:[2.5]}, {...valid,cards:Array(81).fill(4)}, {...valid,cards:'4'}, {...valid,expectedVersion:-1}, {...valid,expectedVersion:'1'}, {...valid,expectedVersion:Number.MAX_SAFE_INTEGER+1}, {...valid,host:true}, {...valid,name:'x'.repeat(25)}, {...valid,name:'x\n'}, {...valid,code:'123'}, {...valid,type:'pass'}, {...valid,type:'replace-player',cards:undefined,target:99}, {...valid,type:'poll'}])assert.throws(()=>validateRequest(invalid));
+  assert.equal(validateRequest(valid).cards.length,2);
+  assert.throws(()=>validateRequest({type:'create',id,requestId:crypto.randomUUID(),name:'   '}));
+  const securityDb=database();let dbAccess=0;
+  const spyDb={prepare(sql){dbAccess++;return securityDb.db.prepare(sql)}};
+  function limiter(limit){const counts=new Map();return {counts,async limit({key}){const n=(counts.get(key)||0)+1;counts.set(key,n);return {success:n<=limit}}}}
+  const makeEnv=()=>({DB:spyDb,NETWORK_LIMIT:limiter(600),SESSION_LIMIT:limiter(120),CREATE_LIMIT:limiter(10),JOIN_LIMIT:limiter(40)});
+  const http=(body,headers={})=>new Request('https://game.example/api/game',{method:'POST',headers:{'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.1',...headers},body:typeof body==='string'?body:JSON.stringify(body)});
+  let limits=makeEnv();
+  for(const [req,status] of [[http(valid,{Origin:'https://attacker.example'}),403],[http(valid,{'Sec-Fetch-Site':'cross-site'}),403],[http(valid,{'Content-Type':'application/jsonp'}),415],[http('{'),400],[http({...valid,cards:[99]}),400],[http('x'.repeat(BODY_LIMIT+1)),413]]){assert.equal((await secureGameRequest(req,limits)).status,status);assert.equal(dbAccess,0)}
+  assert.equal((await secureGameRequest(http(valid),{DB:spyDb})).status,503);assert.equal(dbAccess,0);
+  limits=makeEnv();limits.NETWORK_LIMIT=limiter(0);const limited=await secureGameRequest(http(valid),limits);assert.equal(limited.status,429);assert.equal(limited.headers.get('Retry-After'),'60');assert.equal(dbAccess,0);
+  limits=makeEnv();limits.SESSION_LIMIT=limiter(0);assert.equal((await secureGameRequest(http(valid),limits)).status,429);assert.equal(dbAccess,0);
+  limits=makeEnv();const makeRoom=()=>({type:'create',id:crypto.randomUUID(),name:'Person',requestId:crypto.randomUUID()});
+  for(let i=0;i<10;i++)assert.equal((await secureGameRequest(http(makeRoom()),limits)).status,200);
+  assert.equal((await secureGameRequest(http(makeRoom()),limits)).status,429);
+  assert([...limits.NETWORK_LIMIT.counts.keys()].every(key=>!key.includes('192.0.2.1')));
+  assert([...limits.SESSION_LIMIT.counts.keys()].every(key=>!key.includes(id)));
+  // Verify authorization against real stored games, not only schema checks.
+  const permissionDb=database();const owner=crypto.randomUUID(),viewer=crypto.randomUUID();
+  let room=(await call(permissionDb.db,{type:'create',id:owner,name:'Owner',requestId:crypto.randomUUID(),practice:true})).data;
+  room=(await call(permissionDb.db,{type:'join',id:viewer,name:'Viewer',code:room.code,requestId:crypto.randomUUID()})).data;
+  const before=permissionDb.sqlite.prepare('SELECT version FROM rooms').get().version;
+  for(const type of ['start','add-bot','remove-bot','replace-player','set-scenario','reclaim-seat']){
+    const extra=type==='replace-player'?{target:0}:type==='set-scenario'?{scenario:'tax'}:{};
+    const response=await call(permissionDb.db,{type,id:viewer,code:room.code,expectedVersion:room.version,requestId:crypto.randomUUID(),...extra});
+    assert.equal(response.status,400);
+    assert.equal(permissionDb.sqlite.prepare('SELECT version FROM rooms').get().version,before);
+  }
+  const outsider=crypto.randomUUID();assert.equal((await call(permissionDb.db,{type:'poll',id:outsider,code:room.code})).status,403);
+  assert.equal((await call(permissionDb.db,{type:'start',id:outsider,code:room.code,expectedVersion:room.version,requestId:crypto.randomUUID()})).status,403);
+  const state=JSON.parse(permissionDb.sqlite.prepare('SELECT state FROM rooms').get().state);const bot=state.players.find(p=>p.bot);
+  assert.equal((await call(permissionDb.db,{type:'poll',id:bot.id,code:room.code})).status,400);
+  assert(!JSON.stringify(room).includes(owner));
+  console.log('Passed: strict validation, HTTP/body/origin guards, rate limits, private-token redaction and host/seat permissions.');
 
   console.log('Passed: real SQL duplicate/concurrent actions, stale versions, lost responses, reload recovery, request serialization, foreground/offline wakeups and safe hand selection.');
 } finally {

@@ -47,3 +47,17 @@ Object.assign(reliabilityDictionary.nl,{
 'Your seat is not controlled by the computer.':'Je plaats wordt niet door de computer bestuurd.',
 'You can reclaim your seat between rounds.':'Je kunt je plaats tussen rondes terugnemen.'
 });
+Object.assign(reliabilityDictionary.uk,{
+'Invalid game request.':'Некоректний запит гри.',
+'Cross-site requests are not allowed.':'Запити з іншого сайту заборонені.',
+'Send a JSON game request.':'Некоректний формат запиту гри. Оновіть сторінку.',
+'Game request is too large.':'Запит гри завеликий.',
+'Too many requests. Please wait a minute.':'Забагато запитів. Зачекайте хвилину.'
+});
+Object.assign(reliabilityDictionary.nl,{
+'Invalid game request.':'Ongeldig spelverzoek.',
+'Cross-site requests are not allowed.':'Verzoeken vanaf een andere website zijn niet toegestaan.',
+'Send a JSON game request.':'Ongeldig verzoekformaat. Vernieuw de pagina.',
+'Game request is too large.':'Het spelverzoek is te groot.',
+'Too many requests. Please wait a minute.':'Te veel verzoeken. Wacht een minuut.'
+});
