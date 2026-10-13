@@ -131,7 +131,7 @@ export class GameConnection {
         if (!data?.code || !Number.isSafeInteger(data.version) || !Array.isArray(data.players)) throw new Error('Could not connect.');
         // A poll is not acknowledgement of an uncertain move. Only its exact replay resolves it.
         if (pending && data.acknowledgedRequestId !== pending.requestId) throw new Error('Could not connect.');
-        this.adopt(data);
+        if(data.departed){this.recovery=null;this.deps.storage.removeItem('dalmuti-room');this.emit({game:null,code:''});this.epoch++}else this.adopt(data);
         if (pending) this.clearPending();
         this.failures = 0;
         this.emit({ connected: this.networkOnline, error: '', lastSync: this.deps.now(), latency: Math.max(0, this.deps.now() - began) });

@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dalmuti-reliability-'));
 const databases = [];
 try {
-  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection']) {
+  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle']) {
     const source = fs.readFileSync('app/' + file + '.ts', 'utf8');
     const output = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
@@ -19,6 +19,7 @@ try {
   const id = crypto.randomUUID();
   function database() {
     const sqlite = new DatabaseSync(':memory:'); databases.push(sqlite);
+    sqlite.exec('CREATE TABLE presence (room TEXT NOT NULL, player TEXT NOT NULL, last_seen INTEGER NOT NULL, PRIMARY KEY(room,player))');
     sqlite.exec('CREATE TABLE rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 0)');
     const db = { prepare(sql) {
       let values = [];
@@ -169,6 +170,47 @@ try {
   // An invite to a different room is not silently joined during recovery.
   const invite = new GameConnection(deps(store, async () => { throw new Error('unexpected request'); })); invite.start('FFFFFF');
   assert.equal(invite.state.restoring, false); assert.equal(invite.state.code, 'FFFFFF');
+  // Presence and lifecycle use an injected server clock; heartbeats do not change game versions.
+  const life=database();const hostId=crypto.randomUUID(),guestId=crypto.randomUUID();const time=1_000_000;
+  const invoke=(body,t=time)=>callLife(body,t);
+  async function callLife(body,t){const r=await handleGameRequest(life.db,body,t);return {status:r.status,data:await r.json()}}
+  let table=(await invoke({type:'create',id:hostId,name:'Host',requestId:crypto.randomUUID()})).data;
+  table=(await invoke({type:'join',id:guestId,name:'Guest',code:table.code,requestId:crypto.randomUUID()})).data;
+  const poll=(who,t)=>invoke({type:'poll',id:who,code:table.code},t);
+  await poll(hostId,time);table=(await poll(guestId,time)).data;const initialVersion=table.version;
+  table=(await poll(guestId,time+20_000)).data;assert.equal(table.version,initialVersion);assert.equal(table.players.find(p=>p.id!==guestId).presence,'reconnecting');
+  table=(await poll(guestId,time+59_000)).data;assert.notEqual(table.host,guestId);
+  table=(await poll(guestId,time+60_000)).data;assert.equal(table.host,guestId);assert.equal(table.version,initialVersion+1);
+  const req=(type,who,extra={})=>({type,id:who,code:table.code,expectedVersion:table.version,requestId:crypto.randomUUID(),...extra});
+  assert.equal((await invoke(req('replace-player',guestId,{target:99}),time+60_000)).status,400);
+  const hostSeat=table.players.find(p=>p.name==='Host').seat;
+  const takeover=req('replace-player',guestId,{target:hostSeat});table=(await invoke(takeover,time+60_000)).data;
+  assert.equal(table.players[hostSeat].substituted,true);assert.equal(table.players[hostSeat].count,0);
+  const replayed=(await invoke(takeover,time+60_000)).data;assert.equal(replayed.version,table.version);
+  table=(await poll(hostId,time+60_000)).data;assert.equal(table.players[hostSeat].bot,true);
+  table=(await invoke(req('reclaim-seat',hostId),time+60_000)).data;assert.equal(table.players[hostSeat].bot,false);
+  // The previous host does not automatically take hosting back.
+  assert.notEqual(table.host,hostId);
+  const leave=req('leave-room',hostId);const left=await invoke(leave,time+60_000);assert.equal(left.data.departed,true);assert.equal(left.data.players.length,1);
+  assert.equal((await invoke(leave,time+60_000)).data.departed,true);
+  assert.equal((await poll(hostId,time+60_000)).status,403);
+  table=(await invoke({type:'join',id:hostId,code:table.code,name:'Host',requestId:crypto.randomUUID()},time+60_000)).data;
+  // Grace-period enforcement and exact hand/score preservation during active-game replacement.
+  const raw=life.sqlite.prepare('SELECT state,version FROM rooms WHERE code=?').get(table.code);const active=JSON.parse(raw.state);
+  active.phase='playing';active.players.forEach(p=>{p.hand=[4,5];p.score=7});active.players.push({id:'bot-a',name:'Bot A',bot:true,hand:[6],score:0,wins:0},{id:'bot-b',name:'Bot B',bot:true,hand:[7],score:0,wins:0});active.turn=0;active.host=guestId;
+  life.sqlite.prepare('UPDATE rooms SET state=? WHERE code=?').run(JSON.stringify(active),table.code);
+  table=(await poll(guestId,time+61_000)).data;
+  const target=table.players.find(p=>p.name==='Host').seat;
+  assert.equal((await invoke(req('replace-player',guestId,{target}),time+61_000)).status,400);
+  table=(await poll(guestId,time+121_000)).data;
+  // Keep the guest host alive while the other human is absent.
+  const replacement=req('replace-player',guestId,{target});table=(await invoke(replacement,time+121_000)).data;
+  assert.equal(table.players[target].score,7);assert.equal(table.players[target].count,2);assert.equal(table.players[target].substituted,true);
+  assert.equal((await invoke(req('reclaim-seat',hostId),time+121_000)).status,400);
+  const stored=JSON.parse(life.sqlite.prepare('SELECT state FROM rooms WHERE code=?').get(table.code).state);stored.phase='results';life.sqlite.prepare('UPDATE rooms SET state=? WHERE code=?').run(JSON.stringify(stored),table.code);
+  table=(await poll(hostId,time+121_000)).data;table=(await invoke(req('reclaim-seat',hostId),time+121_000)).data;
+  assert.equal(table.players.find(p=>p.id===hostId).bot,false);
+
   console.log('Passed: real SQL duplicate/concurrent actions, stale versions, lost responses, reload recovery, request serialization, foreground/offline wakeups and safe hand selection.');
 } finally {
   for (const db of databases) db.close();

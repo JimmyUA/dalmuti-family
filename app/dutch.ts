@@ -51,5 +51,8 @@ Object.assign(nl,{
 });
 export const nlLabels=['','Dalmuti','Aartsbisschop','Maarschalk','Barones','Abdis','Ridder','Naaister','Metselaar','Kok','Herderin','Steenhouwer','Boer','Nar'];
 export const nlDynamic:Array<[RegExp,(m:RegExpMatchArray)=>string]>=[
+[/^(.*) is now the host$/,m=>m[1]+' is nu de gastheer'],
+[/^(.*) is now controlled by the computer$/,m=>m[1]+' wordt nu door de computer bestuurd'],
+[/^(.*) reclaimed their seat$/,m=>m[1]+' neemt de eigen plaats terug'],
 [/^(.*) joined as a computer player$/,m=>m[1]+' doet mee als computerspeler'],[/^(.*) left the table$/,m=>m[1]+' heeft de tafel verlaten'],[/^Round (\d+) · cards dealt$/,m=>'Ronde '+m[1]+' · kaarten gedeeld'],[/^(.*) leads the round$/,m=>m[1]+' begint de ronde'],[/^(.*) played (\d+) × (.*)$/,m=>m[1]+' speelt '+m[2]+' × '+(m[3]==='Jester'?'Nar':m[3])],[/^(.*) finished #(\d+)$/,m=>m[1]+' is uit op plaats '+m[2]],[/^(.*) passed$/,m=>m[1]+' past'],[/^(.*) won the trick and leads$/,m=>m[1]+' wint de slag en begint de volgende'],[/^Choose (\d+) cards\.$/,m=>'Kies '+m[1]+(m[1]==='1'?' kaart.':' kaarten.')],[/^Share room code (.*)$/,m=>'Deel de kamercode '+m[1]]
 ];

@@ -26,3 +26,24 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Ja', 'No': 'Nee',
   },
 };
+
+Object.assign(reliabilityDictionary.uk,{
+'Host':'Організатор','online':'Онлайн','offline':'Не в мережі','reconnecting':'Відновлює з’єднання','computer':'Комп’ютер',
+'Computer takeover':'Комп’ютер замінює гравця','Replace with computer':'Замінити комп’ютером','Reclaim my seat':'Повернути моє місце','Leave table':'Залишити стіл',
+'A computer is playing your seat. You can take it back between rounds.':'Комп’ютер грає на вашому місці. Ви можете повернутися між раундами.',
+'Only the host can replace disconnected players.':'Лише організатор може замінити відсутнього гравця.',
+'Choose a disconnected human player.':'Оберіть гравця, який не в мережі.',
+'Wait for the 60-second disconnect grace period.':'Зачекайте 60 секунд після втрати з’єднання.',
+'Your seat is not controlled by the computer.':'Комп’ютер не керує вашим місцем.',
+'You can reclaim your seat between rounds.':'Повернути своє місце можна між раундами.'
+});
+Object.assign(reliabilityDictionary.nl,{
+'Host':'Gastheer','online':'Online','offline':'Offline','reconnecting':'Opnieuw verbinden','computer':'Computer',
+'Computer takeover':'Computer neemt over','Replace with computer':'Vervangen door computer','Reclaim my seat':'Neem mijn plaats terug','Leave table':'Verlaat de tafel',
+'A computer is playing your seat. You can take it back between rounds.':'Een computer speelt op jouw plaats. Je kunt tussen rondes terugkomen.',
+'Only the host can replace disconnected players.':'Alleen de gastheer kan afwezige spelers vervangen.',
+'Choose a disconnected human player.':'Kies een menselijke speler die offline is.',
+'Wait for the 60-second disconnect grace period.':'Wacht tot de verbindingspauze van 60 seconden voorbij is.',
+'Your seat is not controlled by the computer.':'Je plaats wordt niet door de computer bestuurd.',
+'You can reclaim your seat between rounds.':'Je kunt je plaats tussen rondes terugnemen.'
+});
