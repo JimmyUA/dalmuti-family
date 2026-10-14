@@ -14,7 +14,7 @@ try {
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
     fs.writeFileSync(path.join(dir, file + '.mjs'), output);
   }
-  const { handleGameRequest, RECEIPT_LIMIT } = await import('file://' + dir + '/game-service.mjs');
+  const { handleGameRequest, RECEIPT_LIMIT, COMPUTER_DELAY_MS } = await import('file://' + dir + '/game-service.mjs');
   const { GameConnection, PENDING_KEY, retryDelay, handKey } = await import('file://' + dir + '/connection.mjs');
   const id = crypto.randomUUID();
   function database() {
@@ -271,6 +271,57 @@ try {
   const mockFetch=async(url,options)=>String(url).includes('/api/health')?Response.json({status:'ok',release:'expected',checks:{database:true,rateLimits:true}}):String(url).includes('/api/game')?new Response('{}',{status:404,headers:{'X-Release-SHA':'expected'}}):new Response('DALMUTI',{status:200});
   await checkDeployment('https://dalmuti-family.family.workers.dev','expected',mockFetch);
   await assert.rejects(()=>checkDeployment('https://dalmuti-family.family.workers.dev','wrong',mockFetch));
+  // Each due computer action is a single CAS write, regardless of polling clients.
+  const paced=database();const pacedCode='ABCDEF';const human=crypto.randomUUID();
+  const pacedState={code:pacedCode,host:human,players:[{id:human,name:'Human',hand:[11,12],score:0,wins:0},...['A','B','C'].map((name,i)=>({id:'bot-'+i,name,hand:[6+i,9+i],score:0,wins:0,bot:true}))],phase:'playing',round:1,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:[],lastProgressAt:10000};
+  paced.sqlite.prepare('INSERT INTO rooms(code,state,version) VALUES(?,?,0)').run(pacedCode,JSON.stringify(pacedState));
+  const humanMove={type:'play',id:human,code:pacedCode,requestId:crypto.randomUUID(),expectedVersion:0,cards:[12]};
+  const execute=async(body,time)=>{const r=await handleGameRequest(paced.db,body,time);return {status:r.status,data:await r.json()}};
+  const pollBody={type:'poll',id:human,code:pacedCode};
+  let pacedResult=await execute(humanMove,10000);assert.equal(pacedResult.status,200);assert.equal(pacedResult.data.turn,1);assert.equal(pacedResult.data.computerThinking,true);
+  assert(!('computerDueAt' in pacedResult.data));
+  const due=10000+COMPUTER_DELAY_MS;
+  assert.equal((await execute(pollBody,due-1)).data.version,1);
+  const simultaneous=await Promise.all([execute(pollBody,due),execute(pollBody,due)]);
+  assert(simultaneous.every(r=>r.status===200&&r.data.version===2));
+  let saved=JSON.parse(paced.sqlite.prepare('SELECT state FROM rooms').get().state);
+  assert.equal(saved.turn,2);assert.equal(saved.players[1].hand.length,1);assert.equal(saved.players[2].hand.length,2);
+  assert.equal(saved.computerDueAt,due+COMPUTER_DELAY_MS);
+  assert.equal((await execute(pollBody,due+1)).data.version,2);
+  // Retrying the original human request acknowledges it without running another bot.
+  assert.equal((await execute(humanMove,due+1)).data.version,2);
+  assert.equal((await execute(pollBody,due+COMPUTER_DELAY_MS)).data.version,3);
+  // A long absence advances one move, not a catch-up burst.
+  assert.equal((await execute(pollBody,due+100000)).data.version,4);
+  assert.equal((await execute(pollBody,due+100000)).data.version,4);
+  // Legacy rooms with no deadline pause first. Bot tax submissions are separate.
+  saved={...pacedState,phase:'tax',players:[pacedState.players[1],pacedState.players[2],pacedState.players[0],pacedState.players[3]],tax:{},computerDueAt:undefined};
+  paced.sqlite.prepare('UPDATE rooms SET state=?,version=0').run(JSON.stringify(saved));
+  assert.equal((await execute(pollBody,200000)).data.phase,'tax');
+  let taxed=(await execute(pollBody,200000+COMPUTER_DELAY_MS)).data;
+  assert.equal(Object.keys(taxed.tax).length,1);assert.equal(taxed.phase,'tax');
+  taxed=(await execute(pollBody,200000+2*COMPUTER_DELAY_MS)).data;assert.equal(taxed.phase,'playing');
+  assert.equal(Object.keys(taxed.tax).length,2);
+  const {chooseMove}=await import('file://'+dir+'/strategy.mjs');
+  for(const seats of [4,8]){
+    const complete=database();let clock=300000;
+    const invoke=async body=>{const r=await handleGameRequest(complete.db,body,clock);assert.equal(r.status,200);return r.json()};
+    let table=await invoke({type:'create',id:human,name:'Human',requestId:crypto.randomUUID(),practice:true,testMode:true});
+    const send=async(type,extra={})=>invoke({type,id:human,code:table.code,requestId:crypto.randomUUID(),expectedVersion:table.version,...extra});
+    while(table.players.length<seats)table=await send('add-bot');
+    table=await send('start');table=await send('accept');
+    for(let step=0;table.phase!=='results'&&step<1000;step++){
+      clock+=COMPUTER_DELAY_MS;
+      const me=table.players.find(p=>p.id===human);
+      if(table.phase==='tax'&&!table.tax[human])table=await send('tax',{cards:me.hand.slice(-2)});
+      else if(table.phase==='playing'&&table.players[table.turn].id===human){
+        const cards=chooseMove({hand:me.hand,pile:table.pile,opponentCounts:table.players.filter(p=>p.id!==human).map(p=>p.count),lastPlayerCount:table.players[table.last].count});
+        table=await send(cards.length?'play':'pass',cards.length?{cards}:{});
+      }else table=await invoke({type:'poll',id:human,code:table.code});
+    }
+    assert.equal(table.phase,'results');assert.equal(table.finished.length,seats);
+  }
+  console.log('Passed: paced computer moves, concurrent poll CAS, replay safety, legacy deadlines and separate tax choices.');
   console.log('Passed: release headers, schema health checks, inactivity classification and log redaction.');
   console.log('Passed: strict validation, HTTP/body/origin guards, rate limits, private-token redaction and host/seat permissions.');
 

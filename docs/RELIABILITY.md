@@ -28,3 +28,9 @@ Old open tabs must refresh once after deployment because mutations without reque
 `node tests/reliability.mjs` tests the actual game service against SQLite, including duplicate/concurrent writes, stale versions, private-state redaction and session recovery. It exercises the production connection controller with lost responses, saved pending requests, serialized polling and lifecycle wakeups. Both this suite and `tests/strategy.mjs` run before production deployment in GitHub Actions.
 
 Real-browser timing and device storage behaviour still need device testing. Host transfer and replacing absent players remain separate lifecycle work.
+
+## Paced computers
+
+Production applies one computer action per eligible authenticated poll. Every successful move stores a new deadline at least 1.8 seconds later. A compare-and-swap on the room version prevents simultaneous polls from applying the same turn twice. Human mutations schedule the next computer instead of running a batch; retrying an acknowledged action does not advance computers. Tax and revolution decisions are paced too. Existing rooms acquire a deadline on their first poll.
+
+Polling remains every 1.5 seconds, so actual pauses may be longer than 1.8 seconds. With nobody polling, computers pause; a returning player advances one due action, never a catch-up burst. The table displays the latest event and a translated thinking indicator. No database migration is needed.

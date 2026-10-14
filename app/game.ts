@@ -18,5 +18,19 @@ if(type==='revolution'||type==='accept'){if(g.phase!=='revolution')throw Error('
 if(type==='tax'){if(g.phase!=='tax'||i>1)throw Error('Only the Dalmutis choose tax cards.');if(g.tax[id])throw Error('Already submitted.');checkHand(p,cards);if(cards.length!==(i===0?2:1))throw Error('Choose '+(i===0?2:1)+' cards.');g.tax[id]=cards;resolveTax(g);return}
 if(g.phase!=='playing'||g.turn!==i)throw Error('Wait for your turn.');if(type==='play'){checkHand(p,cards);const r=rank(cards);if(g.pile.length&&(cards.length!==g.pile.length||r>=rank(g.pile)))throw Error('Play the same number of cards with a lower rank.');cards.forEach(c=>p.hand.splice(p.hand.indexOf(c),1));g.pile=cards;g.last=i;g.passes=0;say(g,p.name+' played '+cards.length+' × '+(r===13?'Jester':r));if(!p.hand.length){g.finished.push(id);say(g,p.name+' finished #'+g.finished.length)}if(active(g)===1){g.finished.push(g.players.find(x=>x.hand.length)!.id);g.finished.forEach((pid,j)=>{const x=g.players.find(x=>x.id===pid)!;x.score+=g.players.length-1-j;if(j===0)x.wins++});g.phase='results';return}g.turn=next(g,i)}else if(type==='pass'){if(!g.pile.length)throw Error('Lead with cards to start the trick.');g.passes++;say(g,p.name+' passed');const required=active(g)-(g.players[g.last].hand.length?1:0);if(g.passes>=required){g.turn=g.players[g.last].hand.length?g.last:next(g,g.last);g.pile=[];g.passes=0;say(g,g.players[g.turn].name+' won the trick and leads')}else g.turn=next(g,i)}else throw Error('Unknown action.');}
 function checkHand(p:Player,cards:number[]){const h=[...p.hand];if(!Array.isArray(cards)||!cards.length||cards.some(c=>{const i=h.indexOf(c);if(i<0)return true;h.splice(i,1);return false}))throw Error('Those cards are not in your hand.')}
-export function bots(g:Game){for(let k=0;k<100;k++){if(g.phase==='revolution'){const h=g.players.find(p=>p.hand.filter(c=>c===13).length===2);const p=h||g.players.find(p=>p.id===g.host)!;if(!p.bot)break;action(g,p.id,h&&shouldRevolt(g.players.indexOf(p))?'revolution':'accept');continue}if(g.phase==='tax'){g.players.slice(0,2).forEach((p,i)=>{if(p.bot&&!g.tax[p.id])action(g,p.id,'tax',chooseTax(p.hand,i===0?2:1))});if(g.phase==='tax')break;continue}if(g.phase!=='playing')break;const p=g.players[g.turn];if(!p.bot)break;const set=chooseMove({hand:p.hand,pile:g.pile,opponentCounts:g.players.filter(x=>x.id!==p.id).map(x=>x.hand.length),lastPlayerCount:g.players[g.last].hand.length});action(g,p.id,set.length?'play':'pass',set)}}
+// Select one eligible actor; tax choices are also separate computer turns.
+export function computerActor(g:Game):Player|undefined{
+ if(g.phase==='revolution')return g.players.find(p=>p.hand.filter(c=>c===13).length===2)||g.players.find(p=>p.id===g.host);
+ if(g.phase==='tax')return g.players.slice(0,2).find(p=>p.bot&&!g.tax[p.id]);
+ if(g.phase==='playing')return g.players[g.turn];
+}
+export function computerStep(g:Game):boolean{
+ const p=computerActor(g);if(!p?.bot)return false;
+ if(g.phase==='revolution'){const holder=p.hand.filter(c=>c===13).length===2;action(g,p.id,holder&&shouldRevolt(g.players.indexOf(p))?'revolution':'accept')}
+ else if(g.phase==='tax')action(g,p.id,'tax',chooseTax(p.hand,g.players.indexOf(p)===0?2:1));
+ else{const set=chooseMove({hand:p.hand,pile:g.pile,opponentCounts:g.players.filter(x=>x.id!==p.id).map(x=>x.hand.length),lastPlayerCount:g.players[g.last].hand.length});action(g,p.id,set.length?'play':'pass',set)}
+ return true;
+}
+// Batch helper for offline simulations. Production calls computerStep once.
+export function bots(g:Game){for(let k=0;k<100&&computerStep(g);k++);}
 export function view(g:Game,id:string,version=0){const visible=(pid:string)=>pid===id?id:'seat-'+g.players.findIndex(p=>p.id===pid);return {...g,version,host:visible(g.host),finished:g.finished.map(visible),tax:Object.fromEntries(Object.keys(g.tax).map(k=>[visible(k),true])),players:g.players.map(p=>({...p,id:visible(p.id),hand:p.id===id?p.hand:[],count:p.hand.length})),revolution:g.phase==='revolution'?(()=>{const p=g.players.find(p=>p.hand.filter(c=>c===13).length===2);return p?visible(p.id):undefined})():undefined}}

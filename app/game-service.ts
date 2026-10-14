@@ -1,10 +1,10 @@
 import {monitoringSnapshot} from './monitoring';
 import {validateRequest} from './request-validation';
 import {status,transferHost,lifecycleAction,type Presence} from './lifecycle';
-import { action, bots, view, addComputer, setTestScenario, type Game } from './game';
+import { action, computerActor, computerStep, view, addComputer, setTestScenario, type Game } from './game';
 
 type Receipt = { player: string; fingerprint: string; version: number };
-type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number };
+type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number;computerDueAt?:number };
 type Row = { state: string; version: number };
 type Statement = { bind(...args: any[]): Statement; first<T>(): Promise<T | null>; run(): Promise<{ meta: { changes?: number } }> };
 export type Database = { prepare(sql: string): Statement };
@@ -12,10 +12,14 @@ export type GameRequest = { type: string; id: string; code?: string; name?: stri
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const moves = new Set(['start', 'play', 'pass', 'tax', 'accept', 'revolution', 'add-bot', 'remove-bot', 'set-scenario', 'replace-player', 'reclaim-seat', 'leave-room']);
 export const RECEIPT_LIMIT = 1024;
+export const COMPUTER_DELAY_MS = 1800;
+function scheduleComputer(game:StoredGame,now:number){
+ game.computerDueAt=computerActor(game)?.bot?now+COMPUTER_DELAY_MS:undefined;
+}
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const publicView = (game: StoredGame, id: string, version: number, presence:Presence={}, now=Date.now()) => {
-  const { receipts, creationKey,lastProgressAt, ...safe } = game;
-  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
+  const { receipts, creationKey,lastProgressAt,computerDueAt, ...safe } = game;
+  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,computerThinking:!!computerActor(safe)?.bot,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
 };
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
@@ -88,6 +92,15 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       continue;
     }
     if (request.type === 'poll') {
+      if(computerActor(game)?.bot){
+        // Legacy rooms acquire a deadline before their first paced move.
+        if(game.computerDueAt===undefined)scheduleComputer(game,now);
+        else if(now>=game.computerDueAt){computerStep(game);game.lastProgressAt=now;scheduleComputer(game,now)}
+        else return response(publicView(game,request.id,row.version,presence,now));
+        const changed=await db.prepare('UPDATE rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(game),code,row.version).run();
+        if(changed.meta.changes)return response(publicView(game,request.id,row.version+1,presence,now));
+        continue;
+      }
       return member ? response(publicView(game, request.id, row.version,presence,now)) : response({ error: 'Join this room first.' }, 403);
     }
     const acknowledged = replay(game, request, fingerprint, row.version,presence,now);
@@ -111,7 +124,8 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       else if (request.type === 'set-scenario') setTestScenario(game, request.id, request.scenario!);
       else action(game, request.id, request.type, request.cards);
       transferHost(game,presence,now);
-      if(game.players.length)bots(game);
+      if(request.type!=='join'&&request.type!=='leave-room')scheduleComputer(game,now);
+      else if(computerActor(game)?.bot&&game.computerDueAt===undefined)scheduleComputer(game,now);
     } catch (error: any) {
       return response({ error: error.message || 'Unknown action.', snapshot: member ? publicView(JSON.parse(row.state), request.id, row.version) : undefined }, 400);
     }

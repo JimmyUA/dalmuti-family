@@ -1,5 +1,6 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+    'Computer is thinking…': 'Комп’ютер обмірковує хід…',
     'Restoring your room…': 'Відновлюємо вашу кімнату…',
     'Cancel room recovery': 'Скасувати відновлення кімнати',
     'Waiting for confirmation of your last action.': 'Очікуємо підтвердження вашої останньої дії.',
@@ -13,6 +14,7 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+    'Computer is thinking…': 'De computer denkt na…',
     'Restoring your room…': 'Je kamer wordt hersteld…',
     'Cancel room recovery': 'Herstellen annuleren',
     'Waiting for confirmation of your last action.': 'We wachten op bevestiging van je laatste actie.',
