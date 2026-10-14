@@ -29,7 +29,8 @@ After configuring your account and database, and authenticating Wrangler:
 ```sh
 pnpm install --frozen-lockfile
 node tests/strategy.mjs
-pnpm build
+pnpm build:production
+node tests/production.mjs
 node scripts/prepare-cloudflare-deploy.mjs
 pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/github-deploy.json
 pnpm exec wrangler deploy --config dist/server/github-deploy.json
@@ -42,3 +43,9 @@ Set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_D1_DATABASE_ID` in your environment 
 Failed tests or builds stop deployment. Pending migrations are applied before uploading the Worker. A migration can succeed even if deployment subsequently fails; inspect logs before retrying. Worker rollback does not undo database changes. Keep schema changes backward-compatible and use Cloudflare's version history for emergency Worker rollback.
 
 Set `DEPLOY_ENABLED` to `false` to pause deployment while retaining checks. The original ChatGPT Sites URL is hosted separately; this workflow targets your Cloudflare account and cannot update that URL. Custom domain configuration can be added after the first successful deployment.
+
+## CPU budget and production assets
+
+GitHub Actions builds with `pnpm build:production`. The React page is a static Vite bundle served by Cloudflare Assets, so loading the page does not invoke the Worker. Only `/api/*` invokes the small production Worker, which calls the existing security, game service and health handlers directly. Preview builds may still use Vinext. No database migration or paid plan is required for this change.
+
+Cloudflare Free enforces a 10 ms CPU budget per Worker request. Local tests cannot establish live CPU usage. After deployment, check the new release in Diagnostics and Worker logs for both page loads and game actions, including a bot-heavy round. If API requests still exceed the budget, profile and optimise the game service before considering a paid plan.

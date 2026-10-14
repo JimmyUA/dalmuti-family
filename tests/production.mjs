@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import worker from '../dist/server/index.js';
+const config=JSON.parse(readFileSync('dist/server/wrangler.json','utf8'));
+assert.deepEqual(config.assets.run_worker_first,['/api/*']);
+assert.equal(config.assets.binding,'ASSETS');
+const page=readFileSync('dist/client/index.html','utf8');
+assert.match(page,/DALMUTI/);assert.match(page,/type="module"/);
+let assetCalls=0;
+const env={ASSETS:{fetch:async()=>{assetCalls++;return new Response('static')}},NETWORK_LIMIT:{limit:async()=>({success:true})},SESSION_LIMIT:{},CREATE_LIMIT:{},JOIN_LIMIT:{},DB:{prepare:()=>({first:async()=>({rooms:0,presence:0})})}};
+assert.equal(await (await worker.fetch(new Request('https://game.test/'),env)).text(),'static');
+assert.equal((await worker.fetch(new Request('https://game.test/api/game'),env)).status,405);
+assert.equal((await worker.fetch(new Request('https://game.test/api/unknown'),env)).status,404);
+const health=await worker.fetch(new Request('https://game.test/api/health'),env);
+assert.equal(health.status,200);assert.equal((await health.json()).status,'ok');
+const rejected=await worker.fetch(new Request('https://game.test/api/game',{method:'POST',headers:{Origin:'https://other.test','Content-Type':'application/json'},body:'{}'}),env);
+assert.equal(rejected.status,403);assert.equal(assetCalls,1);
+console.log('Passed: static asset configuration, direct API routing, health and cross-site protection.');
