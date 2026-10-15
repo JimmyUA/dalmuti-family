@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dalmuti-reliability-'));
 const databases = [];
 try {
-  for (const file of ['strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security','monitoring','health']) {
+  for (const file of ['expiry','strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security','monitoring','health']) {
     const source = fs.readFileSync('app/' + file + '.ts', 'utf8');
     const output = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
@@ -21,6 +21,7 @@ try {
     const sqlite = new DatabaseSync(':memory:'); databases.push(sqlite);
     sqlite.exec('CREATE TABLE presence (room TEXT NOT NULL, player TEXT NOT NULL, last_seen INTEGER NOT NULL, PRIMARY KEY(room,player))');
     sqlite.exec('CREATE TABLE rooms (code TEXT PRIMARY KEY, state TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 0)');
+    sqlite.exec(fs.readFileSync('drizzle/0002_room_expiry.sql','utf8'));
     const db = { prepare(sql) {
       let values = [];
       return { bind(...args) { values = args; return this; }, async first() { return sqlite.prepare(sql).get(...values) || null; }, async run() { const r = sqlite.prepare(sql).run(...values); return { meta: { changes: Number(r.changes) } }; } };
@@ -113,7 +114,7 @@ try {
 
   // Lost play response: the same move is retried, not a fresh mutation.
   const moveStore = storage({ 'dalmuti-id': id, 'dalmuti-room': game.code }); let dropMove = true;
-  const moveBodies = []; const liveDb = database(); liveDb.sqlite.prepare('INSERT INTO rooms VALUES (?,?,?)').run(game.code, JSON.stringify(privateGame), game.version);
+  const moveBodies = []; const liveDb = database(); liveDb.sqlite.prepare('INSERT INTO rooms(code,state,version,last_activity) VALUES (?,?,?,?)').run(game.code, JSON.stringify(privateGame), game.version,Date.now());
   const moveDeps = deps(moveStore, async body => {
     moveBodies.push(structuredClone(body)); const r = await call(liveDb.db, body);
     if (body.type === 'play' && dropMove && r.status === 200) { dropMove = false; throw new Error('response lost'); }
@@ -125,7 +126,7 @@ try {
   startGame = (await call(setup.db, mutation('start', startGame))).data;
   startGame = (await call(setup.db, mutation('revolution', startGame))).data;
   liveDb.sqlite.prepare('DELETE FROM rooms').run(); const setupRow = setup.sqlite.prepare('SELECT * FROM rooms').get();
-  liveDb.sqlite.prepare('INSERT INTO rooms VALUES (?,?,?)').run(setupRow.code, setupRow.state, setupRow.version);
+  liveDb.sqlite.prepare('INSERT INTO rooms(code,state,version,last_activity) VALUES (?,?,?,?)').run(setupRow.code, setupRow.state, setupRow.version,Date.now());
   moveStore.setItem('dalmuti-room', setupRow.code);
   let client = new GameConnection(moveDeps); client.start(); await client.tick();
   const ownHand = client.state.game.players.find(p => p.id === id).hand;
@@ -274,7 +275,7 @@ try {
   // Each due computer action is a single CAS write, regardless of polling clients.
   const paced=database();const pacedCode='ABCDEF';const human=crypto.randomUUID();
   const pacedState={code:pacedCode,host:human,players:[{id:human,name:'Human',hand:[11,12],score:0,wins:0},...['A','B','C'].map((name,i)=>({id:'bot-'+i,name,hand:[6+i,9+i],score:0,wins:0,bot:true}))],phase:'playing',round:1,turn:0,pile:[],last:0,passes:0,finished:[],tax:{},log:[],lastProgressAt:10000};
-  paced.sqlite.prepare('INSERT INTO rooms(code,state,version) VALUES(?,?,0)').run(pacedCode,JSON.stringify(pacedState));
+  paced.sqlite.prepare('INSERT INTO rooms(code,state,version,last_activity) VALUES(?,?,0,?)').run(pacedCode,JSON.stringify(pacedState),Date.now());
   const humanMove={type:'play',id:human,code:pacedCode,requestId:crypto.randomUUID(),expectedVersion:0,cards:[12]};
   const execute=async(body,time)=>{const r=await handleGameRequest(paced.db,body,time);return {status:r.status,data:await r.json()}};
   const pollBody={type:'poll',id:human,code:pacedCode};
@@ -322,6 +323,34 @@ try {
     assert.equal(table.phase,'results');assert.equal(table.finished.length,seats);
   }
   console.log('Passed: paced computer moves, concurrent poll CAS, replay safety, legacy deadlines and separate tax choices.');
+  const {expiryPolicy,cleanupRooms,expired}=await import('file://'+dir+'/expiry.mjs');
+  assert.throws(()=>expiryPolicy({ROOM_IDLE_TTL_HOURS:'0'}));
+  assert.throws(()=>expiryPolicy({ROOM_ACTIVE_TTL_HOURS:'NaN'}));
+  const policy=expiryPolicy({ROOM_IDLE_TTL_HOURS:'2',ROOM_ACTIVE_TTL_HOURS:'4'});
+  assert.equal(expired('playing',0,policy.idle,policy),false);
+  assert.equal(expired('results',0,policy.idle,policy),true);
+  const expiryFixture=database(), start=1000000000000;
+  const expiryCreate={...lobbyCreate,requestId:crypto.randomUUID()};
+  const expGame=await (await handleGameRequest(expiryFixture.db,expiryCreate,start,policy)).json();
+  const expiryPoll={type:'poll',id,code:expGame.code};
+  assert.equal((await handleGameRequest(expiryFixture.db,expiryPoll,start+policy.idle-1,policy)).status,200);
+  assert.equal(await cleanupRooms(expiryFixture.db,{ROOM_IDLE_TTL_HOURS:'2',ROOM_ACTIVE_TTL_HOURS:'4'},start+policy.idle),0);
+  assert.equal((await handleGameRequest(expiryFixture.db,expiryPoll,start+2*policy.idle-1,policy)).status,404);
+  assert.equal(expiryFixture.sqlite.prepare('SELECT COUNT(*) AS n FROM presence').get().n,0);
+  assert.equal((await handleGameRequest(expiryFixture.db,expiryCreate,Date.now(),policy)).status,404);
+  const cleanupFixture=database();
+  await handleGameRequest(cleanupFixture.db,{...expiryCreate,requestId:crypto.randomUUID()},start,policy);
+  assert.equal(await cleanupRooms(cleanupFixture.db,{ROOM_IDLE_TTL_HOURS:'2',ROOM_ACTIVE_TTL_HOURS:'4'},start+policy.idle),1);
+  const activeFixture=database();
+  const activeGame=await (await handleGameRequest(activeFixture.db,{...expiryCreate,requestId:crypto.randomUUID()},start,policy)).json();
+  const activeState=JSON.parse(activeFixture.sqlite.prepare('SELECT state FROM rooms').get().state);activeState.phase='playing';
+  activeFixture.sqlite.prepare('UPDATE rooms SET state=?').run(JSON.stringify(activeState));
+  assert.equal(await cleanupRooms(activeFixture.db,{ROOM_IDLE_TTL_HOURS:'2',ROOM_ACTIVE_TTL_HOURS:'4'},start+policy.idle),0);
+  assert.equal((await handleGameRequest(activeFixture.db,{type:'poll',id:crypto.randomUUID(),code:activeGame.code},start+policy.active-1,policy)).status,403);
+  assert.equal(activeFixture.sqlite.prepare('SELECT last_activity FROM rooms').get().last_activity,start);
+  assert.equal(await cleanupRooms(activeFixture.db,{ROOM_IDLE_TTL_HOURS:'2',ROOM_ACTIVE_TTL_HOURS:'4'},start+policy.active),1);
+  console.log('Passed: configurable expiry, exact boundary, human renewal, tombstones and scheduled cleanup.');
+
   console.log('Passed: release headers, schema health checks, inactivity classification and log redaction.');
   console.log('Passed: strict validation, HTTP/body/origin guards, rate limits, private-token redaction and host/seat permissions.');
 

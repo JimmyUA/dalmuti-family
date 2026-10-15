@@ -8,4 +8,4 @@ const define={__RELEASE_SHA__:JSON.stringify(release)};
 await build({configFile:false,root:'production',define,plugins:[react()],css:{postcss:{plugins:[tailwind()]}},build:{outDir:'../dist/client',emptyOutDir:true}});
 await build({configFile:false,define,ssr:{noExternal:true},build:{ssr:'production/worker.ts',outDir:'dist/server',emptyOutDir:true,rollupOptions:{output:{entryFileNames:'index.js'}}}});
 mkdirSync('dist/server',{recursive:true});
-writeFileSync('dist/server/wrangler.json',JSON.stringify({name:'dalmuti-family',main:'index.js',no_bundle:true,compatibility_date:'2026-05-15',assets:{directory:'../client',binding:'ASSETS',run_worker_first:['/api/*']},observability:{enabled:true}},null,2)+'\n');
+writeFileSync('dist/server/wrangler.json',JSON.stringify({name:'dalmuti-family',main:'index.js',no_bundle:true,compatibility_date:'2026-05-15',assets:{directory:'../client',binding:'ASSETS',run_worker_first:['/api/*']},triggers:{crons:['*/15 * * * *']},observability:{enabled:true}},null,2)+'\n');

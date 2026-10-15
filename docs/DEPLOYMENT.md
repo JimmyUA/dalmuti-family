@@ -49,3 +49,18 @@ Set `DEPLOY_ENABLED` to `false` to pause deployment while retaining checks. The 
 GitHub Actions builds with `pnpm build:production`. The React page is a static Vite bundle served by Cloudflare Assets, so loading the page does not invoke the Worker. Only `/api/*` invokes the small production Worker, which calls the existing security, game service and health handlers directly. Preview builds may still use Vinext. No database migration or paid plan is required for this change.
 
 Cloudflare Free enforces a 10 ms CPU budget per Worker request. Local tests cannot establish live CPU usage. After deployment, check the new release in Diagnostics and Worker logs for both page loads and game actions, including a bot-heavy round. If API requests still exceed the budget, profile and optimise the game service before considering a paid plan.
+
+### Room expiry
+
+Optional GitHub **Actions repository variables** (Settings → Secrets and variables → Actions → Variables):
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `ROOM_IDLE_TTL_HOURS` | `24` | Inactivity limit for lobby/results rooms |
+| `ROOM_ACTIVE_TTL_HOURS` | `168` | Inactivity limit for all other phases |
+
+Both accept hours from 1 through 8760, including fractional hours. Missing values use defaults; invalid values fail deployment preparation. Change a variable and rerun Game CI on main to apply it. These are deployment-wide settings, not per-room controls.
+
+A scheduled Worker deletes up to 100 expired rooms every 15 minutes. Requests also enforce expiry immediately. Authenticated member requests renew activity; successful joins renew it too. Failed joining attempts and scheduled cleanup do not. Computer state updates never renew activity themselves. An open human game tab counts as activity.
+
+Migration `0002_room_expiry.sql` gives existing rooms a fresh grace period. Deletion removes presence atomically using a database trigger. Minimal room-code tombstones are retained for 30 days so returning clients receive an expiry message; afterward they receive room-not-found. Expired room contents cannot be restored. The health endpoint checks the new schema before deployment smoke checks succeed.

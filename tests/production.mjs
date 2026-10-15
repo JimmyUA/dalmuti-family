@@ -4,6 +4,8 @@ import worker from '../dist/server/index.js';
 const config=JSON.parse(readFileSync('dist/server/wrangler.json','utf8'));
 assert.deepEqual(config.assets.run_worker_first,['/api/*']);
 assert.equal(config.assets.binding,'ASSETS');
+assert.deepEqual(config.triggers.crons,['*/15 * * * *']);
+assert.equal(typeof worker.scheduled,'function');
 const page=readFileSync('dist/client/index.html','utf8');
 assert.match(page,/DALMUTI/);assert.match(page,/type="module"/);
 let assetCalls=0;

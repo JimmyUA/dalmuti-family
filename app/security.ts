@@ -1,8 +1,9 @@
+import {expiryPolicy,type ExpiryEnv} from './expiry';
 import {RELEASE,requestLog,type RequestLog} from './monitoring';
 import {validateRequest} from './request-validation';
 import {handleGameRequest,type Database} from './game-service';
 type Limiter={limit(input:{key:string}):Promise<{success:boolean}>};
-export type SecurityEnv={DB:Database;NETWORK_LIMIT:Limiter;SESSION_LIMIT:Limiter;CREATE_LIMIT:Limiter;JOIN_LIMIT:Limiter};
+export type SecurityEnv=ExpiryEnv&{DB:Database;NETWORK_LIMIT:Limiter;SESSION_LIMIT:Limiter;CREATE_LIMIT:Limiter;JOIN_LIMIT:Limiter};
 export const BODY_LIMIT=8192;
 const reply=(error:string,status:number,extra={})=>Response.json({error,...extra},{status,headers:{'Cache-Control':'no-store',...(status===429?{'Retry-After':'60'}:{})}});
 async function hash(value:string){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('')}
@@ -23,7 +24,7 @@ async function processRequest(request:Request,env:SecurityEnv,context:{action?:s
   if(!(await env.SESSION_LIMIT.limit({key:'dalmuti:session:'+await hash(body.id)})).success)return reply('Too many requests. Please wait a minute.',429,{retryAfter:60});
   const special=body.type==='create'?env.CREATE_LIMIT:body.type==='join'?env.JOIN_LIMIT:null;
   if(special&&!(await special.limit({key:networkKey})).success)return reply('Too many requests. Please wait a minute.',429,{retryAfter:60});
-  return await handleGameRequest(env.DB,body);
+  return await handleGameRequest(env.DB,body,Date.now(),expiryPolicy(env));
  }catch{return reply('Could not connect.',503)}
 }
 

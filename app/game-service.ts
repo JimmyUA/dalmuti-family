@@ -1,3 +1,4 @@
+import {expired,expiryPolicy,type ExpiryPolicy} from './expiry';
 import {monitoringSnapshot} from './monitoring';
 import {validateRequest} from './request-validation';
 import {status,transferHost,lifecycleAction,type Presence} from './lifecycle';
@@ -5,7 +6,7 @@ import { action, computerActor, computerStep, view, addComputer, setTestScenario
 
 type Receipt = { player: string; fingerprint: string; version: number };
 type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number;computerDueAt?:number };
-type Row = { state: string; version: number };
+type Row = { state: string; version: number; last_activity:number };
 type Statement = { bind(...args: any[]): Statement; first<T>(): Promise<T | null>; run(): Promise<{ meta: { changes?: number } }> };
 export type Database = { prepare(sql: string): Statement };
 export type GameRequest = { type: string; id: string; code?: string; name?: string; requestId?: string; expectedVersion?: number; cards?: number[]; scenario?: string; practice?: boolean; testMode?: boolean; target?: number };
@@ -25,7 +26,7 @@ async function digest(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, '0')).join('');
 }
-const read = (db: Database, code: string) => db.prepare('SELECT state,version FROM rooms WHERE code=?').bind(code).first<Row>();
+const read = (db: Database, code: string) => db.prepare('SELECT state,version,last_activity FROM rooms WHERE code=?').bind(code).first<Row>();
 function replay(game: StoredGame, request: GameRequest, fingerprint: string, version: number,presence:Presence={},now=Date.now()): Response | null {
   const receipt = game.receipts?.[request.requestId!];
   if (!receipt) return null;
@@ -35,7 +36,7 @@ function replay(game: StoredGame, request: GameRequest, fingerprint: string, ver
   return response({ ...publicView(game, request.id, version,presence,now),departed:request.type==='leave-room', acknowledgedRequestId: request.requestId });
 }
 
-export async function handleGameRequest(db: Database, request: GameRequest, now=Date.now()): Promise<Response> {
+export async function handleGameRequest(db: Database, request: GameRequest, now=Date.now(), policy:ExpiryPolicy=expiryPolicy()): Promise<Response> {
   try{request=validateRequest(request)}catch{return response({error:'Invalid game request.'},400)}
   if (!request || typeof request.id !== 'string' || !uuid.test(request.id)) {
     return response({ error: 'Invalid player session.' }, 400);
@@ -56,6 +57,7 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     // Stable, unguessable-per-request room code also makes lost create responses retry-safe.
     const creationKey = await digest(request.id + ':' + request.requestId);
     const code = creationKey.slice(0, 6).toUpperCase();
+    if(await db.prepare('SELECT code FROM expired_rooms WHERE code=?').bind(code).first())return response({error:'This room has expired. Please create a new table.'},404);
     const game: StoredGame = {
       code, host: request.id, players: [{ id: request.id, name: String(request.name || 'Player').slice(0, 24), hand: [], score: 0, wins: 0 }],
       phase: 'lobby', round: 0, turn: 0, pile: [], last: 0, passes: 0, finished: [], tax: {}, log: ['Welcome to your family table.'],
@@ -63,10 +65,11 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       lastProgressAt:now,creationKey, receipts: { [request.requestId!]: { player: request.id, fingerprint, version: 0 } },
     };
     if (request.practice) for (let i = 0; i < 3; i++) addComputer(game);
-    await db.prepare('INSERT INTO rooms (code,state,version) VALUES (?,?,0) ON CONFLICT(code) DO NOTHING').bind(code, JSON.stringify(game)).run();
+    await db.prepare('INSERT INTO rooms (code,state,version,last_activity) VALUES (?,?,0,?) ON CONFLICT(code) DO NOTHING').bind(code, JSON.stringify(game),now).run();
     const row = await read(db, code);
     if (!row) return response({ error: 'Could not connect.' }, 503);
     const stored: StoredGame = JSON.parse(row.state);
+    if(expired(stored.phase,row.last_activity,now,policy))return response({error:'This room has expired. Please create a new table.'},404);
     if (stored.creationKey !== creationKey) return response({ error: 'Room code collision. Please create a new room.' }, 409);
     const result = replay(stored, request, fingerprint, row.version);
     // Even after receipt pruning, the creation identity prevents creating a second room.
@@ -76,10 +79,12 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
   if (!/^[A-F0-9]{6}$/.test(code)) return response({ error: 'Room not found. Check the six-character code.' }, 404);
   for (let attempt = 0; attempt < 3; attempt++) {
     const row = await read(db, code);
-    if (!row) return response({ error: 'Room not found. Check the six-character code.' }, 404);
+    if (!row) {const old=await db.prepare('SELECT code FROM expired_rooms WHERE code=?').bind(code).first();return response({error:old?'This room has expired. Please create a new table.':'Room not found. Check the six-character code.'},404);}
     const game: StoredGame = JSON.parse(row.state);
+    if(expired(game.phase,row.last_activity,now,policy)){const removed=await db.prepare('DELETE FROM rooms WHERE code=? AND version=? AND last_activity=?').bind(code,row.version,row.last_activity).run();if(!removed.meta.changes)continue;return response({error:'This room has expired. Please create a new table.'},404);}
     const member = game.players.some(p => p.id === request.id && (!p.bot||p.substituted));
     if(request.type==='poll'&&!member)return response({error:'Join this room first.'},403);
+    if(member&&!game.players.find(p=>p.id===request.id)?.left){const touched=await db.prepare('UPDATE rooms SET last_activity=? WHERE code=? AND last_activity=?').bind(now,code,row.last_activity).run();if(!touched.meta.changes)continue;}
     const presence:Presence={};
     for(const p of game.players.filter(p=>!p.bot||p.substituted)){
       await db.prepare('INSERT INTO presence (room,player,last_seen) VALUES (?,?,?) ON CONFLICT(room,player) DO NOTHING').bind(code,p.id,now).run();
@@ -135,8 +140,8 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     const entries = Object.entries(game.receipts);
     if (entries.length > RECEIPT_LIMIT) game.receipts = Object.fromEntries(entries.slice(-RECEIPT_LIMIT));
     // State and acknowledgement are one atomic compare-and-swap SQL statement.
-    const result = await db.prepare('UPDATE rooms SET state=?,version=version+1 WHERE code=? AND version=?')
-      .bind(JSON.stringify(game), code, row.version).run();
+    const result = await db.prepare('UPDATE rooms SET state=?,version=version+1,last_activity=MAX(last_activity,?) WHERE code=? AND version=?')
+      .bind(JSON.stringify(game), now, code, row.version).run();
     if (result.meta.changes) return response({ ...publicView(game, request.id, row.version + 1,presence,now), departed:request.type==='leave-room',acknowledgedRequestId: request.requestId });
     // Reread after a concurrent write. A duplicate finds its receipt; another action finds a stale version.
   }

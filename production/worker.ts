@@ -1,7 +1,9 @@
+import {cleanupRooms} from '../app/expiry';
 import {secureGameRequest,type SecurityEnv} from '../app/security';
 import {health} from '../app/health';
 type Env=SecurityEnv&{ASSETS:{fetch(request:Request):Promise<Response>}};
 export default {
+ async scheduled(_event:unknown,env:Env){const deleted=await cleanupRooms(env.DB,env);console.log(JSON.stringify({event:"room_cleanup",deleted}));},
  async fetch(request:Request,env:Env):Promise<Response>{
   const path=new URL(request.url).pathname;
   if(path==='/api/game')return request.method==='POST'?secureGameRequest(request,env):new Response('Method not allowed',{status:405,headers:{Allow:'POST'}});

@@ -55,6 +55,8 @@ jobs:
       - name: Deploy production from main
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
         env:
+          ROOM_IDLE_TTL_HOURS: ${{ vars.ROOM_IDLE_TTL_HOURS }}
+          ROOM_ACTIVE_TTL_HOURS: ${{ vars.ROOM_ACTIVE_TTL_HOURS }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
