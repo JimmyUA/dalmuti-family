@@ -14,8 +14,8 @@ try {
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
     fs.writeFileSync(path.join(dir, file + '.mjs'), output);
   }
-  const { handleGameRequest, RECEIPT_LIMIT, COMPUTER_DELAY_MS } = await import('file://' + dir + '/game-service.mjs');
-  const { GameConnection, PENDING_KEY, retryDelay, handKey } = await import('file://' + dir + '/connection.mjs');
+  const { handleGameRequest, RECEIPT_LIMIT, COMPUTER_DELAY_MS, computerDelay } = await import('file://' + dir + '/game-service.mjs');
+  const { GameConnection, PENDING_KEY, retryDelay, handKey, pollDelay } = await import('file://' + dir + '/connection.mjs');
   const id = crypto.randomUUID();
   function database() {
     const sqlite = new DatabaseSync(':memory:'); databases.push(sqlite);
@@ -281,13 +281,13 @@ try {
   const pollBody={type:'poll',id:human,code:pacedCode};
   let pacedResult=await execute(humanMove,10000);assert.equal(pacedResult.status,200);assert.equal(pacedResult.data.turn,1);assert.equal(pacedResult.data.computerThinking,true);
   assert(!('computerDueAt' in pacedResult.data));
-  const due=10000+COMPUTER_DELAY_MS;
+  const due=JSON.parse(paced.sqlite.prepare('SELECT state FROM rooms').get().state).computerDueAt;
   assert.equal((await execute(pollBody,due-1)).data.version,1);
   const simultaneous=await Promise.all([execute(pollBody,due),execute(pollBody,due)]);
   assert(simultaneous.every(r=>r.status===200&&r.data.version===2));
   let saved=JSON.parse(paced.sqlite.prepare('SELECT state FROM rooms').get().state);
   assert.equal(saved.turn,2);assert.equal(saved.players[1].hand.length,1);assert.equal(saved.players[2].hand.length,2);
-  assert.equal(saved.computerDueAt,due+COMPUTER_DELAY_MS);
+  assert.equal(saved.computerDueAt,due+computerDelay(saved));
   assert.equal((await execute(pollBody,due+1)).data.version,2);
   // Retrying the original human request acknowledges it without running another bot.
   assert.equal((await execute(humanMove,due+1)).data.version,2);
@@ -323,6 +323,13 @@ try {
     assert.equal(table.phase,'results');assert.equal(table.finished.length,seats);
   }
   console.log('Passed: paced computer moves, concurrent poll CAS, replay safety, legacy deadlines and separate tax choices.');
+  const timing={...pacedState,turn:1,players:pacedState.players.map(p=>({...p,hand:[6,7,8,9,10]})),pile:[1]};
+  assert.equal(computerDelay(timing),300);
+  timing.pile=[];assert(computerDelay(timing)>300&&computerDelay(timing)<=COMPUTER_DELAY_MS);
+  timing.players[1].hand=[2,3];assert.equal(computerDelay(timing),COMPUTER_DELAY_MS);
+  assert.equal(pollDelay({computerThinking:true,computerWaitMs:300},50),1000);
+  assert.equal(pollDelay({computerThinking:true,computerWaitMs:1800},100),1700);
+  assert.equal(pollDelay(null),1500);
   const {expiryPolicy,cleanupRooms,expired}=await import('file://'+dir+'/expiry.mjs');
   assert.throws(()=>expiryPolicy({ROOM_IDLE_TTL_HOURS:'0'}));
   assert.throws(()=>expiryPolicy({ROOM_ACTIVE_TTL_HOURS:'NaN'}));

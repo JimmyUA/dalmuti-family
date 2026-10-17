@@ -1,3 +1,4 @@
+import {chooseMove,legalSets} from './strategy';
 import {expired,expiryPolicy,type ExpiryPolicy} from './expiry';
 import {monitoringSnapshot} from './monitoring';
 import {validateRequest} from './request-validation';
@@ -14,13 +15,23 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const moves = new Set(['start', 'play', 'pass', 'tax', 'accept', 'revolution', 'add-bot', 'remove-bot', 'set-scenario', 'replace-player', 'reclaim-seat', 'leave-room']);
 export const RECEIPT_LIMIT = 1024;
 export const COMPUTER_DELAY_MS = 1800;
+export function computerDelay(game:Game){
+ const actor=computerActor(game);if(!actor?.bot)return 0;
+ if(game.phase!=='playing')return 1200;
+ const info={hand:actor.hand,pile:game.pile,opponentCounts:game.players.filter(p=>p.id!==actor.id).map(p=>p.hand.length),lastPlayerCount:game.players[game.last].hand.length};
+ if(!chooseMove(info).length)return 300;
+ const endgame=actor.hand.length<=4||info.opponentCounts.some(n=>n>0&&n<=3);
+ if(endgame)return COMPUTER_DELAY_MS;
+ const choices=legalSets(actor.hand,game.pile).length;
+ return choices<=1?600:choices<=4?1000:1400;
+}
 function scheduleComputer(game:StoredGame,now:number){
- game.computerDueAt=computerActor(game)?.bot?now+COMPUTER_DELAY_MS:undefined;
+ game.computerDueAt=computerActor(game)?.bot?now+computerDelay(game):undefined;
 }
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const publicView = (game: StoredGame, id: string, version: number, presence:Presence={}, now=Date.now()) => {
   const { receipts, creationKey,lastProgressAt,computerDueAt, ...safe } = game;
-  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,computerThinking:!!computerActor(safe)?.bot,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
+  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,computerThinking:!!computerActor(safe)?.bot,computerWaitMs:computerActor(safe)?.bot&&computerDueAt!==undefined?Math.max(0,computerDueAt-now):undefined,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
 };
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));

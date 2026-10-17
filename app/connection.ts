@@ -7,6 +7,7 @@ type Reply = { status: number; data: any };
 export type Dependencies = { storage: Storage; transport: (body: any) => Promise<Reply>; uuid: () => string; now: () => number; schedule: (fn: () => void, delay: number) => any; cancel: (timer: any) => void };
 export const PENDING_KEY = 'dalmuti-pending-action';
 export const retryDelay = (failures: number) => Math.min(30_000, 1_000 * 2 ** Math.min(5, Math.max(0, failures - 1)));
+export function pollDelay(game:Snapshot|null,latency=0){const wait=game?.computerWaitMs;return game?.computerThinking&&typeof wait==='number'&&Number.isFinite(wait)?Math.max(1000,Math.min(1800,wait-Math.max(0,latency))):1500}
 export const handKey = (game: Snapshot | null, id: string) => game ? JSON.stringify([game.code, game.round, game.players.find(p => p.id === id)?.hand || []]) : '';
 
 export class GameConnection {
@@ -146,7 +147,7 @@ export class GameConnection {
       }
     } finally {
       this.inFlight = false;
-      if (!this.stopped) this.schedule(this.immediate ? 0 : retry ? Math.max(retryAfter,retryDelay(this.failures)) : 1500);
+      if (!this.stopped) this.schedule(this.immediate ? 0 : retry ? Math.max(retryAfter,retryDelay(this.failures)) : pollDelay(this.state.game,this.state.latency||0));
     }
   }
   dismissError() { this.emit({error:''}); }

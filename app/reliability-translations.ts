@@ -1,5 +1,14 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+"Select a matching set. Only playable combinations can be selected.": "Оберіть набір карт одного рангу. Доступні лише можливі ходи.",
+"No matching set can beat the table. You can pass.": "У вас немає набору, що поб’є карти на столі. Можна пропустити хід.",
+"Ready to play.": "Можна викладати.",
+"Add matching cards to complete your set.": "Додайте карти, щоб завершити набір.",
+"Pass this turn?": "Пропустити цей хід?",
+"Pass this turn…": "Пропустити хід…",
+"Confirm pass": "Так, пропустити",
+"Keep playing": "Продовжити вибір",
+
     'Computer is thinking…': 'Комп’ютер обмірковує хід…',
     'Restoring your room…': 'Відновлюємо вашу кімнату…',
     'Cancel room recovery': 'Скасувати відновлення кімнати',
@@ -14,6 +23,15 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+"Select a matching set. Only playable combinations can be selected.": "Kies kaarten van dezelfde rang. Alleen speelbare combinaties zijn beschikbaar.",
+"No matching set can beat the table. You can pass.": "Je hebt geen set die de tafel verslaat. Je kunt passen.",
+"Ready to play.": "Klaar om te spelen.",
+"Add matching cards to complete your set.": "Voeg passende kaarten toe om je set compleet te maken.",
+"Pass this turn?": "Deze beurt passen?",
+"Pass this turn…": "Deze beurt passen…",
+"Confirm pass": "Bevestig passen",
+"Keep playing": "Verder spelen",
+
     'Computer is thinking…': 'De computer denkt na…',
     'Restoring your room…': 'Je kamer wordt hersteld…',
     'Cancel room recovery': 'Herstellen annuleren',

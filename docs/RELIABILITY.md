@@ -34,3 +34,11 @@ Real-browser timing and device storage behaviour still need device testing. Host
 Production applies one computer action per eligible authenticated poll. Every successful move stores a new deadline at least 1.8 seconds later. A compare-and-swap on the room version prevents simultaneous polls from applying the same turn twice. Human mutations schedule the next computer instead of running a batch; retrying an acknowledged action does not advance computers. Tax and revolution decisions are paced too. Existing rooms acquire a deadline on their first poll.
 
 Polling remains every 1.5 seconds, so actual pauses may be longer than 1.8 seconds. With nobody polling, computers pause; a returning player advances one due action, never a catch-up burst. The table displays the latest event and a translated thinking indicator. No database migration is needed.
+
+## Adaptive computer timing and move guidance
+
+Computer decision deadlines now range from 300 ms for passes to 1.8 seconds for endgame choices. Simple moves use 600 ms, ordinary choices 1–1.4 seconds, and tax/revolution decisions 1.2 seconds. The choice uses the bot's hand and public counts only. The persisted deadline is still updated atomically with the move. Polls follow the remaining deadline, with a minimum one-second interval to keep an eight-player table within the existing network rate budget. Actual visible timing includes network latency and polling; it is not a hard real-time guarantee.
+
+Card selection allows only prefixes of legal sets. Partial pairs/triples remain selectable; Play enables only for a complete valid set. Taxation permits arbitrary cards up to the required count. Changes to room version, phase, turn or hand invalidate the selection and pass confirmation. The server remains authoritative.
+
+Pass is a separate secondary control below Play, disabled while cards are selected, and requires confirmation. Cancelling, selecting cards, or receiving a new game version cancels confirmation. All new guidance is translated into English, Ukrainian and Dutch.

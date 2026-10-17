@@ -2,8 +2,29 @@ import assert from 'node:assert/strict';
 import ts from 'typescript';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dalmuti-ai-'));
 try{
-for(const file of ['strategy','game','client-state']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
+for(const file of ['strategy','game','client-state','move-guidance']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
 const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action,setTestScenario,view}=await import('file://'+dir+'/game.mjs');
+const {moveGuidance}=await import('file://'+dir+'/move-guidance.mjs');
+let guide=moveGuidance([3,3,7,13],[4,4],[]);
+assert.equal(guide.canAdd(3),true);assert.equal(guide.canAdd(7),false);assert.equal(guide.canAdd(13),true);
+guide=moveGuidance([3,3,7,13],[4,4],[3]);assert.equal(guide.canPlay,false);assert.equal(guide.canAdd(3),true);assert.equal(guide.canAdd(13),true);
+assert.equal(moveGuidance([3,3,7,13],[4,4],[3,13]).canPlay,true);
+assert.equal(moveGuidance([3,3,7,13],[4,4],[3,7]).canPlay,false);
+assert.equal(moveGuidance([3,3,7,13],[4,4],[3,3]).canAdd(13),false);
+assert.equal(moveGuidance([8,9],[4],[]).hasMove,false);
+assert.equal(moveGuidance([13,13],[],[13,13]).canPlay,true);
+assert.equal(moveGuidance([13,13],[12,12],[]).hasMove,false);
+// Every permitted prefix must extend to a set accepted by the authoritative engine.
+for(const pile of [[],[8],[8,8],[8,8,8],[13]]){
+ const hand=[3,3,6,13,13];
+ for(let mask=1;mask<(1<<hand.length);mask++){
+  const selected=hand.filter((_,i)=>mask&(1<<i)),g=moveGuidance(hand,pile,selected);
+  const table={code:'GUIDE',host:'a',players:[{id:'a',name:'A',hand:[...hand],score:0,wins:0},...['b','c','d'].map(id=>({id,name:id,hand:[12],score:0,wins:0}))],phase:'playing',round:1,turn:0,pile,last:1,passes:0,finished:[],tax:{},log:[]};
+  let valid=true;try{action(table,'a','play',selected)}catch{valid=false}
+  assert.equal(g.canPlay,valid);
+ }
+}
+console.log('Passed: partial sets, wildcard selection, impossible combinations and client/server move parity.');
 const move=(hand,pile=[],opponentCounts=[10,10,10],lastPlayerCount=10)=>chooseMove({hand,pile,opponentCounts,lastPlayerCount});
 assert.deepEqual(move([3,3,3,9,10]),[3,3,3]);
 assert.deepEqual(move([4,13],[5,5]),[4,13]);
