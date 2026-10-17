@@ -4,7 +4,17 @@ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dalmuti-ai-'));
 try{
 for(const file of ['strategy','game','client-state','move-guidance']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
 const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action,setTestScenario,view}=await import('file://'+dir+'/game.mjs');
-const {moveGuidance}=await import('file://'+dir+'/move-guidance.mjs');
+const {moveGuidance,tableAction}=await import('file://'+dir+'/move-guidance.mjs');
+const buttonState={turn:true,busy:false,online:true,stale:false,selected:0,canPlay:false,pileCount:2};
+assert.equal(tableAction(buttonState).type,'pass');
+assert.equal(tableAction({...buttonState,pileCount:0}).disabled,true);
+assert.equal(tableAction({...buttonState,selected:1}).type,null);
+assert.equal(tableAction({...buttonState,selected:1}).remaining,1);
+assert.equal(tableAction({...buttonState,selected:2,canPlay:true}).type,'play');
+for(const state of [{stale:true},{busy:true},{online:false},{turn:false}])assert.equal(tableAction({...buttonState,...state}).disabled,true);
+assert.equal(tableAction({...buttonState,stale:true}).type,null);
+assert.equal(tableAction({...buttonState,selected:2,canPlay:true,busy:true}).disabled,true);
+console.log('Passed: one context-sensitive action, incomplete sets, empty leads, stale-selection protection and busy guards.');
 let guide=moveGuidance([3,3,7,13],[4,4],[]);
 assert.equal(guide.canAdd(3),true);assert.equal(guide.canAdd(7),false);assert.equal(guide.canAdd(13),true);
 guide=moveGuidance([3,3,7,13],[4,4],[3]);assert.equal(guide.canPlay,false);assert.equal(guide.canAdd(3),true);assert.equal(guide.canAdd(13),true);

@@ -1,5 +1,11 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+"Review your selection":"Перевірте вибір карт",
+"Complete your set":"Завершіть набір",
+"Select cards to play":"Оберіть карти для ходу",
+"Clear selection":"Очистити вибір",
+"The table changed. Select cards again or clear your selection.":"Ситуація на столі змінилася. Оберіть карти знову або очистіть вибір.",
+
 "Select a matching set. Only playable combinations can be selected.": "Оберіть набір карт одного рангу. Доступні лише можливі ходи.",
 "No matching set can beat the table. You can pass.": "У вас немає набору, що поб’є карти на столі. Можна пропустити хід.",
 "Ready to play.": "Можна викладати.",
@@ -23,6 +29,12 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+"Review your selection":"Controleer je selectie",
+"Complete your set":"Maak je set compleet",
+"Select cards to play":"Kies kaarten om te spelen",
+"Clear selection":"Selectie wissen",
+"The table changed. Select cards again or clear your selection.":"De tafel is veranderd. Kies opnieuw kaarten of wis je selectie.",
+
 "Select a matching set. Only playable combinations can be selected.": "Kies kaarten van dezelfde rang. Alleen speelbare combinaties zijn beschikbaar.",
 "No matching set can beat the table. You can pass.": "Je hebt geen set die de tafel verslaat. Je kunt passen.",
 "Ready to play.": "Klaar om te spelen.",
