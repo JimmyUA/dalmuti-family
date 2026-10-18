@@ -34,3 +34,7 @@ Native counters are scoped to Cloudflare locations, not a strict globally consis
 The reliability suite covers malformed fields, oversized requests, invalid JSON, cross-site origins, MIME checks, rate-limit failures, hashed keys, session-token redaction, unauthorized game controls, bot-session spoofing and version-preserving rejection. It also exercises the existing reconnect/lifecycle/rules tests.
 
 These safeguards do not replace platform-level DDoS protection, monitoring, dependency updates, or a browser security review. Never log request bodies or player-session tokens. Input protection does not make the game an account-based identity system.
+
+## Player-facing privacy information
+
+The production build emits `/privacy.html` as a standalone static page from `scripts/privacy-page.mjs`. The game footer links to the current language in a separate tab. The notice covers server room/session/presence data, browser local storage, configurable expiry defaults, limited expired-room records, hosting metadata, diagnostics and clearing local data. It starts no game connection and works without local storage; without JavaScript, all three language versions remain readable. Review this notice whenever storage, logging, retention or hosting changes. It describes the current game behavior and does not claim that clearing local data deletes server data or hosting logs/backups.

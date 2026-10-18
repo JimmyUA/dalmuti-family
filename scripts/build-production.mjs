@@ -1,3 +1,4 @@
+import {renderPrivacyPage} from './privacy-page.mjs';
 import {build} from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/postcss';
@@ -6,6 +7,7 @@ const release=process.env.GITHUB_SHA||'development';
 if(release!=='development'&&!/^[a-f0-9]{40}$/i.test(release))throw Error('Invalid GITHUB_SHA');
 const define={__RELEASE_SHA__:JSON.stringify(release)};
 await build({configFile:false,root:'production',define,plugins:[react()],css:{postcss:{plugins:[tailwind()]}},build:{outDir:'../dist/client',emptyOutDir:true}});
+writeFileSync('dist/client/privacy.html',renderPrivacyPage());
 await build({configFile:false,define,ssr:{noExternal:true},build:{ssr:'production/worker.ts',outDir:'dist/server',emptyOutDir:true,rollupOptions:{output:{entryFileNames:'index.js'}}}});
 mkdirSync('dist/server',{recursive:true});
 writeFileSync('dist/server/wrangler.json',JSON.stringify({name:'dalmuti-family',main:'index.js',no_bundle:true,compatibility_date:'2026-05-15',assets:{directory:'../client',binding:'ASSETS',run_worker_first:['/api/*']},triggers:{crons:['*/15 * * * *']},observability:{enabled:true}},null,2)+'\n');

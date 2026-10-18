@@ -1,5 +1,6 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+'Privacy information ↗':'Інформація про приватність ↗',
 "Revolution declined":"Відмова від революції",
 "Dismiss explanation":"Сховати пояснення",
 "A greater revolution was declared. Every player’s rank was reversed and no cards are exchanged this round.":"Оголошено велику революцію. Порядок усіх рангів змінено на протилежний. У цьому раунді обміну картами немає.",
@@ -45,6 +46,7 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+'Privacy information ↗':'Privacy-informatie ↗',
 "Revolution declined":"Revolutie afgewezen",
 "Dismiss explanation":"Uitleg sluiten",
 "A greater revolution was declared. Every player’s rank was reversed and no cards are exchanged this round.":"Er is een grote revolutie uitgeroepen. De volledige rangorde is omgekeerd en deze ronde worden geen kaarten geruild.",
