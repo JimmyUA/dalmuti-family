@@ -4,3 +4,9 @@ if(poll&&(!current||current.code!==incoming.code))return current;
 if(current?.code===incoming.code&&current.version>incoming.version)return current;
 return incoming;
 }
+
+// Discard selections when their hand/table context changes so hidden cards cannot
+// block Pass or become selected again if a previous context returns.
+export function reconcileSelection(selection:{key:string;indices:number[]},key:string){
+return selection.key===key?selection:{key,indices:[]};
+}

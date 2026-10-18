@@ -8,10 +8,9 @@ export function moveGuidance(hand:number[],pile:number[],selected:number[]){
  canAdd:(card:number)=>completions.some(set=>contains(set,[...selected,card])),hasMove:legal.length>0};
 }
 
-export function tableAction(input:{turn:boolean;busy:boolean;online:boolean;stale:boolean;selected:number;canPlay:boolean;pileCount:number}){
- const {turn,busy,online,stale,selected,canPlay,pileCount}=input;
+export function tableAction(input:{turn:boolean;busy:boolean;online:boolean;selected:number;canPlay:boolean;pileCount:number}){
+ const {turn,busy,online,selected,canPlay,pileCount}=input;
  const blocked=!turn||busy||!online;
- if(stale)return {type:null,disabled:true,label:'Review your selection',remaining:0} as const;
  if(selected>0)return canPlay?{type:'play',disabled:blocked,label:'Play cards',remaining:0} as const:{type:null,disabled:true,label:'Complete your set',remaining:Math.max(0,pileCount-selected)} as const;
  if(!pileCount)return {type:null,disabled:true,label:'Select cards to play',remaining:0} as const;
  return {type:'pass',disabled:blocked,label:'Pass',remaining:0} as const;
