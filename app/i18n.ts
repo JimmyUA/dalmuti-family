@@ -2,6 +2,11 @@ import { reliabilityDictionary } from './reliability-translations';
 import {nl,nlDynamic} from './dutch';
 export type Language = "en" | "uk" | "nl";
 const uk:Record<string,string>={
+"Skip to results":"До результатів",
+"All human players have finished. Watch the computers or skip to the results.":"Усі гравці-люди завершили раунд. Дивіться гру комп’ютерів або перейдіть до результатів.",
+"Finishing computer turns…":"Завершуємо ходи комп’ютерів…",
+"Wait until all human players have finished the round.":"Зачекайте, поки всі гравці-люди завершать раунд.",
+
   "THE FAMILY TABLE": "СІМЕЙНИЙ СТІЛ",
   "How to play": "Як грати",
   "Close ×": "Закрити ×",

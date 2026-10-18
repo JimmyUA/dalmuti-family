@@ -1,6 +1,6 @@
 import type {GameRequest} from './game-service';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const types=['create','join','poll','start','play','pass','tax','accept','revolution','add-bot','remove-bot','set-scenario','replace-player','reclaim-seat','leave-room'];
+const types=['skip-to-results','create','join','poll','start','play','pass','tax','accept','revolution','add-bot','remove-bot','set-scenario','replace-player','reclaim-seat','leave-room'];
 export function validateRequest(value:unknown):GameRequest{
  const bad=()=>{throw new Error('Invalid game request.')};
  if(!value||typeof value!=='object'||Array.isArray(value))return bad();

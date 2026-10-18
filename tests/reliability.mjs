@@ -322,6 +322,54 @@ try {
     }
     assert.equal(table.phase,'results');assert.equal(table.finished.length,seats);
   }
+  // Skip uses normal strategy and scoring, is authorized only after the last human,
+  // and continues bounded batches through ordinary polls without a thinking deadline.
+  const {computerStep}=await import('file://'+dir+'/game.mjs');
+  const {SKIP_BATCH_SIZE}=await import('file://'+dir+'/game-service.mjs');
+  for(const seats of [4,8]){
+    const fixture=database();
+    const state={...structuredClone(pacedState),players:[{id:human,name:'Human',hand:[],score:0,wins:0},
+      ...Array.from({length:seats-1},(_,i)=>({id:'bot-'+i,name:'Computer '+i,hand:Array.from({length:12},(_,j)=>j+1),score:0,wins:0,bot:true}))],finished:[human],turn:1,last:0,computerDueAt:999999};
+    const normal=structuredClone(state);
+    for(let i=0;i<2000&&computerStep(normal);i++);
+    assert.equal(normal.phase,'results');
+    const reset=value=>fixture.sqlite.prepare('INSERT OR REPLACE INTO rooms(code,state,version,last_activity) VALUES(?,?,0,?)').run(pacedCode,JSON.stringify(value),10000);
+    const invoke=async body=>{const response=await handleGameRequest(fixture.db,body,10000);return {status:response.status,data:await response.json()}};
+    const request={type:'skip-to-results',id:human,code:pacedCode,requestId:crypto.randomUUID(),expectedVersion:0};
+    const blocked=structuredClone(state);blocked.players[1].bot=false;blocked.players[1].id=crypto.randomUUID();
+    reset(blocked);
+    assert.equal((await invoke(pollBody)).data.canSkipComputers,false);
+    assert.equal((await invoke(request)).status,400);
+    assert.equal(fixture.sqlite.prepare('SELECT version FROM rooms').get().version,0);
+    reset({...state,phase:'tax'});assert.equal((await invoke(request)).status,400);
+    reset(state);
+    assert.equal((await invoke(pollBody)).data.canSkipComputers,true);
+    const pair=await Promise.all([invoke(request),invoke({...request,requestId:crypto.randomUUID()})]);
+    assert.equal(pair.filter(r=>r.status===200).length,1);
+    assert.equal(pair.filter(r=>r.status===409).length,1);
+    let snapshot=pair.find(r=>r.status===200).data;
+    assert.equal(snapshot.version,1);assert.equal(snapshot.canSkipComputers,false);
+    assert(!('skipComputerWait' in snapshot));
+    // A duplicate acknowledgement must not execute another batch.
+    const beforeReplay=fixture.sqlite.prepare('SELECT state FROM rooms').get().state;
+    assert.equal((await invoke(request)).status,200);
+    assert.equal(fixture.sqlite.prepare('SELECT state FROM rooms').get().state,beforeReplay);
+    if(seats===8){assert.equal(snapshot.skippingComputers,true);assert(snapshot.computerWaitMs===0);}
+    for(let batch=0;snapshot.phase!=='results'&&batch<100;batch++){
+      const before=JSON.parse(fixture.sqlite.prepare('SELECT state FROM rooms').get().state);
+      const expected=structuredClone(before);
+      for(let step=0;step<SKIP_BATCH_SIZE&&computerStep(expected);step++);
+      snapshot=(await invoke(pollBody)).data;
+      const actual=JSON.parse(fixture.sqlite.prepare('SELECT state FROM rooms').get().state);
+      assert.deepEqual(actual.players,expected.players);assert.deepEqual(actual.finished,expected.finished);
+    }
+    const completed=JSON.parse(fixture.sqlite.prepare('SELECT state FROM rooms').get().state);
+    assert.equal(snapshot.phase,'results');assert.equal(snapshot.skippingComputers,false);
+    assert.deepEqual(completed.players,normal.players);assert.deepEqual(completed.finished,normal.finished);
+    const next=await invoke({...request,type:'start',requestId:crypto.randomUUID(),expectedVersion:snapshot.version});
+    assert.equal(next.status,200);assert.equal(next.data.skippingComputers,false);assert.equal(next.data.canSkipComputers,false);
+  }
+  console.log('Passed: optional skip to results, remaining-human guard, normal rankings/scoring, bounded batches, concurrent requests, replay safety and next-round reset.');
   console.log('Passed: paced computer moves, concurrent poll CAS, replay safety, legacy deadlines and separate tax choices.');
   const timing={...pacedState,turn:1,players:pacedState.players.map(p=>({...p,hand:[6,7,8,9,10]})),pile:[1]};
   assert.equal(computerDelay(timing),300);

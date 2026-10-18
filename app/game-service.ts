@@ -6,13 +6,13 @@ import {status,transferHost,lifecycleAction,type Presence} from './lifecycle';
 import { action, computerActor, computerStep, view, addComputer, setTestScenario, type Game } from './game';
 
 type Receipt = { player: string; fingerprint: string; version: number };
-type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number;computerDueAt?:number };
+type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number;computerDueAt?:number;skipComputerWait?:boolean };
 type Row = { state: string; version: number; last_activity:number };
 type Statement = { bind(...args: any[]): Statement; first<T>(): Promise<T | null>; run(): Promise<{ meta: { changes?: number } }> };
 export type Database = { prepare(sql: string): Statement };
 export type GameRequest = { type: string; id: string; code?: string; name?: string; requestId?: string; expectedVersion?: number; cards?: number[]; scenario?: string; practice?: boolean; testMode?: boolean; target?: number };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const moves = new Set(['start', 'play', 'pass', 'tax', 'accept', 'revolution', 'add-bot', 'remove-bot', 'set-scenario', 'replace-player', 'reclaim-seat', 'leave-room']);
+const moves = new Set(['skip-to-results', 'start', 'play', 'pass', 'tax', 'accept', 'revolution', 'add-bot', 'remove-bot', 'set-scenario', 'replace-player', 'reclaim-seat', 'leave-room']);
 export const RECEIPT_LIMIT = 1024;
 export const COMPUTER_DELAY_MS = 1800;
 export function computerDelay(game:Game){
@@ -25,13 +25,24 @@ export function computerDelay(game:Game){
  const choices=legalSets(actor.hand,game.pile).length;
  return choices<=1?600:choices<=4?1000:1400;
 }
+export const SKIP_BATCH_SIZE = 12;
+export function canSkipComputers(game:Game){
+ return game.phase==='playing'&&game.players.some(p=>!p.bot)&&game.players.every(p=>p.bot||game.finished.includes(p.id));
+}
+function skipComputerBatch(game:StoredGame,now:number){
+ // Bound each request's work; subsequent polls continue without thinking delays.
+ for(let step=0;step<SKIP_BATCH_SIZE&&canSkipComputers(game)&&computerStep(game);step++);
+ game.lastProgressAt=now;
+ scheduleComputer(game,now);
+}
 function scheduleComputer(game:StoredGame,now:number){
- game.computerDueAt=computerActor(game)?.bot?now+computerDelay(game):undefined;
+ if(!canSkipComputers(game))game.skipComputerWait=undefined;
+ game.computerDueAt=computerActor(game)?.bot?now+(game.skipComputerWait?0:computerDelay(game)):undefined;
 }
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const publicView = (game: StoredGame, id: string, version: number, presence:Presence={}, now=Date.now()) => {
-  const { receipts, creationKey,lastProgressAt,computerDueAt, ...safe } = game;
-  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,computerThinking:!!computerActor(safe)?.bot,computerWaitMs:computerActor(safe)?.bot&&computerDueAt!==undefined?Math.max(0,computerDueAt-now):undefined,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
+  const { receipts, creationKey,lastProgressAt,computerDueAt,skipComputerWait, ...safe } = game;
+  const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,canSkipComputers:canSkipComputers(safe)&&safe.finished.includes(id)&&!safe.players.find(p=>p.id===id)?.bot&&!skipComputerWait,skippingComputers:!!skipComputerWait,computerThinking:!!computerActor(safe)?.bot,computerWaitMs:computerActor(safe)?.bot&&computerDueAt!==undefined?Math.max(0,computerDueAt-now):undefined,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
 };
 async function digest(value: string) {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
@@ -110,7 +121,8 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     if (request.type === 'poll') {
       if(computerActor(game)?.bot){
         // Legacy rooms acquire a deadline before their first paced move.
-        if(game.computerDueAt===undefined)scheduleComputer(game,now);
+        if(game.skipComputerWait&&canSkipComputers(game))skipComputerBatch(game,now);
+        else if(game.computerDueAt===undefined)scheduleComputer(game,now);
         else if(now>=game.computerDueAt){computerStep(game);game.lastProgressAt=now;scheduleComputer(game,now)}
         else return response(publicView(game,request.id,row.version,presence,now));
         const changed=await db.prepare('UPDATE rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(game),code,row.version).run();
@@ -136,6 +148,10 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
           game.players.push({ id: request.id, name: String(request.name || 'Player').slice(0, 24), hand: [], score: 0, wins: 0 });
         }
         else game.players.find(p=>p.id===request.id)!.left=false;
+      } else if(request.type==='skip-to-results'){
+        if(!canSkipComputers(game)||!game.finished.includes(request.id)||game.players.find(p=>p.id===request.id)?.bot)throw Error('Wait until all human players have finished the round.');
+        game.skipComputerWait=true;
+        skipComputerBatch(game,now);
       } else if(['replace-player','reclaim-seat','leave-room'].includes(request.type))lifecycleAction(game,request.id,request.type,request.target,presence,now);
       else if (request.type === 'set-scenario') setTestScenario(game, request.id, request.scenario!);
       else action(game, request.id, request.type, request.cards);

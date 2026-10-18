@@ -31,6 +31,6 @@ export function computerStep(g:Game):boolean{
  else{const set=chooseMove({hand:p.hand,pile:g.pile,opponentCounts:g.players.filter(x=>x.id!==p.id).map(x=>x.hand.length),lastPlayerCount:g.players[g.last].hand.length});action(g,p.id,set.length?'play':'pass',set)}
  return true;
 }
-// Batch helper for offline simulations. Production calls computerStep once.
+// Batch helper for offline simulations. Production bounds its own skip batches.
 export function bots(g:Game){for(let k=0;k<100&&computerStep(g);k++);}
 export function view(g:Game,id:string,version=0){const visible=(pid:string)=>pid===id?id:'seat-'+g.players.findIndex(p=>p.id===pid);return {...g,version,host:visible(g.host),finished:g.finished.map(visible),tax:Object.fromEntries(Object.keys(g.tax).map(k=>[visible(k),true])),players:g.players.map(p=>({...p,id:visible(p.id),hand:p.id===id?p.hand:[],count:p.hand.length})),revolution:g.phase==='revolution'?(()=>{const p=g.players.find(p=>p.hand.filter(c=>c===13).length===2);return p?visible(p.id):undefined})():undefined}}

@@ -1,4 +1,9 @@
 export const nl:Record<string,string>={
+"Skip to results":"Naar de uitslag",
+"All human players have finished. Watch the computers or skip to the results.":"Alle menselijke spelers zijn klaar. Kijk verder of ga naar de uitslag.",
+"Finishing computer turns…":"Computerbeurten worden afgerond…",
+"Wait until all human players have finished the round.":"Wacht tot alle menselijke spelers de ronde hebben afgerond.",
+
 'THE FAMILY TABLE':'DE FAMILIETAFEL','How to play':'Spelregels','Close ×':'Sluiten ×','A little luck. A lot of strategy.':'Een beetje geluk. Veel strategie.',
 'Get rid of your cards first. Lead with one or more cards of the same rank. Everyone else plays the same number with a lower rank, or passes. You can play again after passing.':'Raak als eerste al je kaarten kwijt. Begin met één of meer kaarten van dezelfde rang. De andere spelers spelen evenveel kaarten van een lagere rang, of passen. Na het passen mag je bij een volgende beurt weer spelen.',
 'Jesters are wild alongside numbered cards, and rank 13 alone. When everyone else passes consecutively, the last player to play leads a new trick. If they finished, the next player with cards leads.':'Narren nemen de rang aan van de kaarten waarmee ze worden gespeeld. Zonder andere kaarten hebben ze rang 13. Als alle andere spelers achter elkaar passen, begint de speler die als laatste kaarten speelde een nieuwe slag. Is die speler al uit, dan begint de volgende speler die nog kaarten heeft.',
