@@ -1,5 +1,16 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+"Waiting for players.":"Очікуємо гравців.",
+"Choose whether to declare a revolution.":"Вибір: оголосити революцію чи відмовитися.",
+"Taxation: choose return cards or wait for the other players.":"Податки: оберіть карти для обміну або зачекайте на інших гравців.",
+"Round results.":"Результати раунду.",
+"Official rulebook (opens in a new tab)":"Офіційні правила (відкриються в новій вкладці)",
+
+"Skip to game":"Перейти до гри",
+"Your family table":"Ваш сімейний стіл",
+"Dismiss message":"Закрити повідомлення",
+"Privacy information (opens in a new tab)":"Інформація про приватність (відкриється в новій вкладці)",
+
 'Privacy information ↗':'Інформація про приватність ↗',
 "Revolution declined":"Відмова від революції",
 "Dismiss explanation":"Сховати пояснення",
@@ -46,6 +57,17 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+"Waiting for players.":"Wachten op spelers.",
+"Choose whether to declare a revolution.":"Kies of je een revolutie wilt uitroepen.",
+"Taxation: choose return cards or wait for the other players.":"Belasting: kies kaarten om terug te geven of wacht op de andere spelers.",
+"Round results.":"Ronde-uitslag.",
+"Official rulebook (opens in a new tab)":"Officiële spelregels (opent in een nieuw tabblad)",
+
+"Skip to game":"Naar het spel",
+"Your family table":"Jullie familietafel",
+"Dismiss message":"Melding sluiten",
+"Privacy information (opens in a new tab)":"Privacy-informatie (opent in een nieuw tabblad)",
+
 'Privacy information ↗':'Privacy-informatie ↗',
 "Revolution declined":"Revolutie afgewezen",
 "Dismiss explanation":"Uitleg sluiten",

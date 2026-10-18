@@ -2,8 +2,18 @@ import assert from 'node:assert/strict';
 import ts from 'typescript';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dalmuti-ai-'));
 try{
-for(const file of ['strategy','game','client-state','move-guidance']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
+for(const file of ['strategy','game','client-state','move-guidance','accessibility']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
 const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action,setTestScenario,view}=await import('file://'+dir+'/game.mjs');
+const {cardLabel,gameAnnouncement}=await import('file://'+dir+'/accessibility.mjs');
+assert.equal(cardLabel('Jester',13,1,4,'en'),'Jester, rank 13, card 2 of 4');
+assert.match(cardLabel('Блазень',13,0,2,'uk'),/карта 1 з 2/);
+assert.match(cardLabel('Nar',13,0,2,'nl'),/kaart 1 van 2/);
+const publicTable={round:2,phase:'playing',turn:0,players:[{id:'me',name:'Jimmy'},{id:'other',name:'Oliver'}],log:['Oliver passed']};
+assert.match(gameAnnouncement(publicTable,'me','en',s=>s),/Round 2\. Your move\. Oliver passed/);
+assert.match(gameAnnouncement({...publicTable,turn:1},'me','en',s=>s),/Oliver’s move/);
+assert.match(gameAnnouncement({...publicTable,phase:'tax'},'me','en',s=>s),/Taxation:/);
+assert.equal(gameAnnouncement(null,'me','en',s=>s),'');
+console.log('Passed: localized card position/rank labels and public turn/phase announcements.');
 const {moveGuidance,tableAction}=await import('file://'+dir+'/move-guidance.mjs');
 const buttonState={turn:true,busy:false,online:true,selected:0,canPlay:false,pileCount:2};
 assert.equal(tableAction(buttonState).type,'pass');
