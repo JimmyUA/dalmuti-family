@@ -1,3 +1,4 @@
+import {legacyGameText} from './brand';
 import { reliabilityDictionary } from './reliability-translations';
 import {nl,nlDynamic} from './dutch';
 export type Language = "en" | "uk" | "nl";
@@ -13,7 +14,7 @@ const uk:Record<string,string>={
   "A little luck. A lot of strategy.": "Трохи удачі. Багато стратегії.",
   "Get rid of your cards first. Lead with one or more cards of the same rank. Everyone else plays the same number with a lower rank, or passes. You can play again after passing.": "Позбудьтеся всіх карт першими. Починайте з однієї або кількох карт однакового рангу. Інші гравці мають викласти стільки ж карт нижчого рангу або пропустити хід. Після пропуску можна знову грати, коли настане ваша черга.",
   "Jesters are wild alongside numbered cards, and rank 13 alone. When everyone else passes consecutively, the last player to play leads a new trick. If they finished, the next player with cards leads.": "Блазні замінюють будь-яку карту в наборі, а без інших карт мають ранг 13. Коли всі інші поспіль пропускають хід, нову взятку починає той, хто останнім виклав карти. Якщо він уже завершив гру, починає наступний гравець із картами.",
-  "Before each round, the Greater Peon gives their two best cards to the Greater Dalmuti, who chooses two to return. The lesser pair exchanges one. A player dealt both Jesters can cancel taxes; if they are the Greater Peon, all ranks reverse too.": "Перед кожним раундом Великий селянин віддає дві найкращі карти Великому Далмуті, який обирає дві карти у відповідь. Малі обмінюються однією картою. Гравець із двома блазнями може скасувати податки. Якщо це Великий селянин, порядок усіх рангів також змінюється на протилежний.",
+  "Before each round, the Greater Peon gives their two best cards to the Monarch, who chooses two to return. The lesser pair exchanges one. A player dealt both Jesters can cancel taxes; if they are the Greater Peon, all ranks reverse too.": "Перед кожним раундом Великий селянин віддає дві найкращі карти Монарху, який обирає дві карти у відповідь. Малі обмінюються однією картою. Гравець із двома блазнями може скасувати податки. Якщо це Великий селянин, порядок усіх рангів також змінюється на протилежний.",
   "Finish order sets the next round’s ranks. Our optional scoreboard awards one point per player you beat.": "Порядок завершення визначає ранги в наступному раунді. Таблиця результатів нараховує одне очко за кожного гравця, якого ви випередили.",
   "Official rulebook ↗": "Офіційні правила англійською ↗",
   "Independent family game, with original visual design.": "Незалежна сімейна гра з власним оформленням.",
@@ -25,7 +26,7 @@ const uk:Record<string,string>={
   "And never underestimate the peasant.": "І не недооцінюйте селянина.",
   "THE PEASANT": "СЕЛЯНИН",
   "THE JESTER": "БЛАЗЕНЬ",
-  "THE DALMUTI": "ДАЛМУТІ",
+  "THE MONARCH": "МОНАРХ",
   "4–8 players": "4–8 гравців",
   "Ages 8+": "Від 8 років",
   "One link. One table.": "Одне посилання. Один стіл.",
@@ -62,10 +63,10 @@ const uk:Record<string,string>={
   "Declare revolution ✶": "Оголосити революцію ✶",
   "Continue to taxes": "Перейти до податків",
   "Time to pay the crown.": "Час сплатити податки.",
-  "Your return cards are submitted. Waiting for the other Dalmuti.": "Карти для обміну обрано. Чекаємо на іншого Далмуті.",
+  "Your return cards are submitted. Waiting for the other royal.": "Карти для обміну обрано. Чекаємо на іншого правителя.",
   "Select ": "Оберіть ",
   " cards from your hand to return.": " карти зі своєї руки для обміну.",
-  "The Peons’ best cards are exchanged automatically once both Dalmutis choose.": "Найкращі карти селян обміняються автоматично, щойно обидва Далмуті зроблять вибір.",
+  "The Peons’ best cards are exchanged automatically once both royals choose.": "Найкращі карти селян обміняються автоматично, щойно обидва правителі зроблять вибір.",
   "Submit return cards": "Підтвердити обмін",
   "takes the crown!": "здобуває корону!",
   "Play the next round →": "Наступний раунд →",
@@ -87,10 +88,10 @@ const uk:Record<string,string>={
   "Reconnecting…": "Відновлюємо з’єднання…",
   "Leave this screen ↗": "Вийти з кімнати ↗",
   "Your seat is saved. Rejoin with the same device.": "Ваше місце збережено. Повертайтеся з цього самого пристрою.",
-  "DALMUTI · THE FAMILY TABLE": "ДАЛМУТІ · СІМЕЙНИЙ СТІЛ",
+  "CROWNTURN · THE FAMILY TABLE": "CROWNTURN · СІМЕЙНИЙ СТІЛ",
   "A little rivalry. A lot of together.": "Трохи суперництва. Багато спільних митей.",
-  "Greater Dalmuti": "Великий Далмуті",
-  "Lesser Dalmuti": "Малий Далмуті",
+  "Monarch": "Монарх",
+  "Regent": "Регент",
   "Greater Peon": "Великий селянин",
   "Lesser Peon": "Малий селянин",
   "Merchant": "Купець",
@@ -105,7 +106,7 @@ Object.assign(uk,{
   "Both Jesters are needed.": "Потрібні обидва блазні.",
   "Waiting for the player with both Jesters.": "Чекаємо на гравця з двома блазнями.",
   "Waiting for the host.": "Чекаємо на організатора.",
-  "Only the Dalmutis choose tax cards.": "Лише Далмуті обирають карти для обміну.",
+  "Only the royals choose tax cards.": "Лише правителі обирають карти для обміну.",
   "Already submitted.": "Вибір уже підтверджено.",
   "Wait for your turn.": "Зачекайте на свою чергу.",
   "Play the same number of cards with a lower rank.": "Викладіть стільки ж карт нижчого рангу.",
@@ -120,7 +121,7 @@ Object.assign(uk,{
   "Welcome to your family table.": "Ласкаво просимо за сімейний стіл!",
   "Greater revolution! All ranks reversed.": "Велика революція! Порядок рангів змінено на протилежний.",
   "Revolution! No taxes this round.": "Революція! У цьому раунді немає податків.",
-  "Taxation · Dalmutis choose their return cards": "Податки · Далмуті обирають карти для обміну",
+  "Taxation · Royals choose their return cards": "Податки · Правителі обирають карти для обміну",
   "Failed to fetch": "Немає зв’язку із сервером. Перевірте підключення до інтернету."
 });
 Object.assign(uk,{
@@ -162,9 +163,9 @@ Object.assign(uk,{
   "playing": "Гра",
   "results": "Результати"
 });
-export const ukLabels=['','Далмуті','Архієпископ','Маршал','Баронеса','Абатиса','Лицар','Швачка','Муляр','Кухар','Пастушка','Каменяр','Селянин','Блазень'];
+export const ukLabels=['','Монарх','Архієпископ','Маршал','Баронеса','Абатиса','Лицар','Швачка','Муляр','Кухар','Пастушка','Каменяр','Селянин','Блазень'];
 export function countLabel(n:number,lang:Language,kind:'card'|'crown',accusative=false){if(lang==='nl')return n+' '+(kind==='card'?(n===1?'kaart':'kaarten'):(n===1?'kroon':'kronen'));if(lang==='en')return n+' '+(kind==='card'?'card':'crown')+(n===1?'':'s');const forms=kind==='card'?[accusative?'карту':'карта','карти','карт']:['корона','корони','корон'];const category=new Intl.PluralRules('uk').select(n);return n+' '+forms[category==='one'?0:category==='few'?1:2]}
-export function translate(text:string,lang:Language):string{if(lang==='en')return text;if(reliabilityDictionary[lang][text])return reliabilityDictionary[lang][text];const dictionary=lang==='nl'?nl:uk;if(dictionary[text])return dictionary[text];for(const [pattern,replace] of (lang==='nl'?nlDynamic:dynamic)){const match=text.match(pattern);if(match)return replace(match)}return text}
+export function translate(text:string,lang:Language):string{text=legacyGameText[text]||text;if(lang==='en')return text;if(reliabilityDictionary[lang][text])return reliabilityDictionary[lang][text];const dictionary=lang==='nl'?nl:uk;if(dictionary[text])return dictionary[text];for(const [pattern,replace] of (lang==='nl'?nlDynamic:dynamic)){const match=text.match(pattern);if(match)return replace(match)}return text}
 const dynamic:Array<[RegExp,(m:RegExpMatchArray)=>string]>=[
 [/^(.*) is now the host$/,m=>m[1]+' тепер організатор'],
 [/^(.*) is now controlled by the computer$/,m=>m[1]+' тепер грає під керуванням комп’ютера'],

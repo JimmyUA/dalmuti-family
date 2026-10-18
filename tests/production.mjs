@@ -7,7 +7,7 @@ assert.equal(config.assets.binding,'ASSETS');
 assert.deepEqual(config.triggers.crons,['*/15 * * * *']);
 assert.equal(typeof worker.scheduled,'function');
 const page=readFileSync('dist/client/index.html','utf8');
-assert.match(page,/DALMUTI/);assert.match(page,/type="module"/);
+assert.match(page,/Crownturn/);assert.match(page,/<meta property="og:title" content="Crownturn">/);assert.match(page,/rel="icon"/);assert.match(page,/type="module"/);
 let assetCalls=0;
 const env={ASSETS:{fetch:async()=>{assetCalls++;return new Response('static')}},NETWORK_LIMIT:{limit:async()=>({success:true})},SESSION_LIMIT:{},CREATE_LIMIT:{},JOIN_LIMIT:{},DB:{prepare:()=>({first:async()=>({rooms:0,presence:0})})}};
 assert.equal(await (await worker.fetch(new Request('https://game.test/'),env)).text(),'static');

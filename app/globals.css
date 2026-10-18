@@ -32,3 +32,5 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .hero-card.one{color:#102d22}
 /* Keep the compact two-column sidebar without long translations widening it. */
 @media(max-width:800px){.game-layout aside{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.game-layout aside>*{min-width:0}.panel{overflow-wrap:anywhere}}
+
+.brand small{max-width:190px;white-space:normal;line-height:1.4}.about-game{margin-top:20px;border-top:1px solid #d8d6bf;padding-top:10px}.about-game summary{cursor:pointer;color:#315b43;font-size:14px}.about-game p{font-size:14px}

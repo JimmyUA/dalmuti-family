@@ -269,7 +269,7 @@ try {
   const {deploymentUrl,checkDeployment}=await import('../scripts/smoke-check.mjs');
   assert.equal(deploymentUrl('Worker: https://dalmuti-family.family.workers.dev'),'https://dalmuti-family.family.workers.dev');
   assert.throws(()=>deploymentUrl('No URL'));
-  const mockFetch=async(url,options)=>String(url).includes('/api/health')?Response.json({status:'ok',release:'expected',checks:{database:true,rateLimits:true}}):String(url).includes('/api/game')?new Response('{}',{status:404,headers:{'X-Release-SHA':'expected'}}):new Response('DALMUTI',{status:200});
+  const mockFetch=async(url,options)=>String(url).includes('/api/health')?Response.json({status:'ok',release:'expected',checks:{database:true,rateLimits:true}}):String(url).includes('/api/game')?new Response('{}',{status:404,headers:{'X-Release-SHA':'expected'}}):new Response('Crownturn',{status:200});
   await checkDeployment('https://dalmuti-family.family.workers.dev','expected',mockFetch);
   await assert.rejects(()=>checkDeployment('https://dalmuti-family.family.workers.dev','wrong',mockFetch));
   // Each due computer action is a single CAS write, regardless of polling clients.

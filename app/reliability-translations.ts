@@ -1,5 +1,11 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+"Ranks. Taxes. Revolutions.":"Ранги. Податки. Революції.",
+"About Crownturn":"Про Crownturn",
+"Crownturn is an independently developed card game inspired by The Great Dalmuti. It is not affiliated with or endorsed by the original game’s publisher.":"Crownturn — незалежно розроблена карткова гра, натхненна The Great Dalmuti. Вона не пов’язана з видавцем оригінальної гри й не схвалена ним.",
+"Original game’s rulebook (opens in a new tab)":"Правила оригінальної гри (відкриються в новій вкладці)",
+"Original game’s rulebook ↗":"Правила оригінальної гри ↗",
+
 "Waiting for players.":"Очікуємо гравців.",
 "Choose whether to declare a revolution.":"Вибір: оголосити революцію чи відмовитися.",
 "Taxation: choose return cards or wait for the other players.":"Податки: оберіть карти для обміну або зачекайте на інших гравців.",
@@ -57,6 +63,12 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+"Ranks. Taxes. Revolutions.":"Rangen. Belasting. Revoluties.",
+"About Crownturn":"Over Crownturn",
+"Crownturn is an independently developed card game inspired by The Great Dalmuti. It is not affiliated with or endorsed by the original game’s publisher.":"Crownturn is een onafhankelijk ontwikkeld kaartspel, geïnspireerd op The Great Dalmuti. Het is niet verbonden aan of goedgekeurd door de uitgever van het oorspronkelijke spel.",
+"Original game’s rulebook (opens in a new tab)":"Spelregels van het oorspronkelijke spel (opent in een nieuw tabblad)",
+"Original game’s rulebook ↗":"Spelregels van het oorspronkelijke spel ↗",
+
 "Waiting for players.":"Wachten op spelers.",
 "Choose whether to declare a revolution.":"Kies of je een revolutie wilt uitroepen.",
 "Taxation: choose return cards or wait for the other players.":"Belasting: kies kaarten om terug te geven of wacht op de andere spelers.",

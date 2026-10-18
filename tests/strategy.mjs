@@ -2,8 +2,19 @@ import assert from 'node:assert/strict';
 import ts from 'typescript';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'dalmuti-ai-'));
 try{
-for(const file of ['strategy','game','client-state','move-guidance','accessibility']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace("'./strategy'","'./strategy.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
+for(const file of ['strategy','game','client-state','move-guidance','accessibility','brand','i18n','dutch','reliability-translations']){let code=ts.transpileModule(fs.readFileSync('app/'+file+'.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;code=code.replace(/from '(\.\/[^']+)'/g,"from '$1.mjs'");fs.writeFileSync(path.join(dir,file+'.mjs'),code)}
 const {chooseMove,chooseTax,shouldRevolt}=await import('file://'+dir+'/strategy.mjs');const {start,bots,rank,action,setTestScenario,view}=await import('file://'+dir+'/game.mjs');
+const {BRAND}=await import('file://'+dir+'/brand.mjs');
+const {translate,ukLabels}=await import('file://'+dir+'/i18n.mjs');
+const {nlLabels}=await import('file://'+dir+'/dutch.mjs');
+assert.equal(BRAND.name,'Crownturn');assert.equal(ukLabels[1],'Монарх');assert.equal(nlLabels[1],'Vorst');
+for(const lang of ['en','uk','nl']){
+ for(const text of ['Monarch','Regent','THE MONARCH','CROWNTURN · THE FAMILY TABLE','Taxation · Dalmutis choose their return cards','Only the Dalmutis choose tax cards.'])assert(!/dalmut|далмут/i.test(translate(text,lang)));
+ assert(translate('CROWNTURN · THE FAMILY TABLE',lang).includes('CROWNTURN'));
+ assert.notEqual(translate(BRAND.tagline,lang),undefined);
+}
+assert.equal(translate('Jimmy Dalmuti joined','en'),'Jimmy Dalmuti joined');
+console.log('Passed: Crownturn identity, localized roles and backwards-compatible room terminology.');
 const {cardLabel,gameAnnouncement}=await import('file://'+dir+'/accessibility.mjs');
 assert.equal(cardLabel('Jester',13,1,4,'en'),'Jester, rank 13, card 2 of 4');
 assert.match(cardLabel('Блазень',13,0,2,'uk'),/карта 1 з 2/);

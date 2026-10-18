@@ -20,6 +20,8 @@ try{
  await page.route('**/api/game',async route=>{const body=route.request().postDataJSON();await route.fulfill({json:{...game,...(body.requestId?{acknowledgedRequestId:body.requestId}:{} )}})});
  await page.goto(origin+'/' +(phase==='privacy'?'privacy.html?lang=nl':''));
  if(!['welcome','privacy'].includes(phase))await page.locator('.board').waitFor();
+ if(!(await page.title()).toUpperCase().includes('CROWNTURN'))throw Error('Missing Crownturn page identity');
+ if(phase!=='privacy'&&(await page.locator('body').innerText()).match(/dalmut|далмут/i))throw Error('Old brand visible outside About');
  await page.evaluate(axe);const report=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));
  const overflow=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  results.push({lang,phase,width,overflow,violations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});
@@ -29,6 +31,12 @@ try{
  await page.getByRole('button',{name:/Room ABCDEF/}).click();await page.locator('.toast button').focus();await page.keyboard.press('Enter');if(await page.locator('.toast').count())throw Error('Keyboard dismissal failed');
  await page.emulateMedia({reducedMotion:'reduce'});if(await c.evaluate(el=>getComputedStyle(el).transitionDuration)!=='0s')throw Error('Reduced motion ignored');
  if(process.env.A11Y_SCREENSHOT_PREFIX)await page.screenshot({path:process.env.A11Y_SCREENSHOT_PREFIX+'-playing.png',fullPage:true});
+ }
+ if(phase==='welcome'){
+ await page.getByRole('button',{name:'How to play'}).click();
+ const about=page.getByText('About Crownturn',{exact:true});await about.focus();await page.keyboard.press('Enter');
+ if(!await page.getByRole('link',{name:'Original game’s rulebook (opens in a new tab)'}).isVisible())throw Error('About reference not reachable by keyboard');
+ await page.keyboard.press('Escape');
  }
  if(phase==='welcome'&&process.env.A11Y_SCREENSHOT_PREFIX)await page.screenshot({path:process.env.A11Y_SCREENSHOT_PREFIX+'-welcome.png',fullPage:true});
  await context.close();

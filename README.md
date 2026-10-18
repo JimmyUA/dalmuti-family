@@ -1,8 +1,10 @@
-# Dalmuti · Family Table
+# Crownturn
+
+Ranks. Taxes. Revolutions.
 
 A mobile-friendly multiplayer family card game for 4–8 players, including computer opponents. Supports English, Ukrainian and Dutch, private room codes, automatic rule enforcement, taxation, revolutions and rankings.
 
-Live game: https://dalmuti-family-table.cocoascout2.chatgpt.site
+Live game: https://dalmuti-family.sergii-pryhodko.workers.dev/
 
 ## Development
 
@@ -16,15 +18,17 @@ pnpm dev
 ## Build and checks
 
 ```sh
-pnpm build
+pnpm build:production
 node tests/strategy.mjs
+node tests/reliability.mjs
+node tests/production.mjs
 ```
 
 ## Storage and hosting
 
 The server uses Cloudflare D1 through the `DB` binding. Database migrations are in `drizzle/`. Apply the migration to the local D1 database before testing room creation. The included Sites/Vinext starter documentation and build configuration describe the Cloudflare runtime integration; GitHub Pages alone cannot run the multiplayer API.
 
-The existing live deployment is managed through ChatGPT Sites. This export omits its project identifier and does not change the running site. For independent deployment, configure your Cloudflare Worker and D1 database, and apply the SQL migration before serving requests.
+Production uses Cloudflare static assets, a direct API Worker and D1, deployed by GitHub Actions. See docs/DEPLOYMENT.md. The historical repository/Worker/database names and local-storage keys are retained so existing rooms, deployment settings and device sessions continue to work. Crownturn domain availability and trademark clearance are not established by this rename.
 
 ## Source layout
 
@@ -35,4 +39,4 @@ The existing live deployment is managed through ChatGPT Sites. This export omits
 - `app/i18n.ts` and `app/dutch.ts`: translations
 - `db/` and `drizzle/`: database schema and migrations
 
-Independent family implementation with original visual design. The Great Dalmuti is a trademark of its respective owner; this project is not affiliated with the publisher.
+Crownturn is an independently developed card game inspired by The Great Dalmuti. It is not affiliated with or endorsed by the original game’s publisher.
