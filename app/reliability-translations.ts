@@ -1,5 +1,14 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+"Revolution explained":"Як працює революція",
+"Greater revolution":"Велика революція",
+"Revolution":"Революція",
+"Declare greater revolution ✶":"Оголосити велику революцію ✶",
+"The player holding both Jesters is the Greater Peon. Declaring a greater revolution reverses every player’s rank and cancels all card exchanges for this round.":"Обидва Блазні у Великого Селянина. Велика революція змінює порядок усіх рангів на протилежний і скасовує всі обміни картами в цьому раунді.",
+"Holding both Jesters lets a player declare a revolution. All card exchanges are cancelled for this round; everyone keeps their rank.":"Гравець з обома Блазнями може оголосити революцію. Всі обміни картами в цьому раунді скасовуються; ранги залишаються незмінними.",
+"Continuing to taxes declines the revolution. The usual card exchanges take place.":"Продовжити до податків — означає відмовитися від революції. Відбудуться звичайні обміни картами.",
+"No player holds both Jesters. The host can continue to taxation.":"Ніхто не має обох Блазнів. Організатор може перейти до податків.",
+
 "Review your selection":"Перевірте вибір карт",
 "Complete your set":"Завершіть набір",
 "Select cards to play":"Оберіть карти для ходу",
@@ -29,6 +38,15 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+"Revolution explained":"Uitleg over de revolutie",
+"Greater revolution":"Grote revolutie",
+"Revolution":"Revolutie",
+"Declare greater revolution ✶":"Grote revolutie uitroepen ✶",
+"The player holding both Jesters is the Greater Peon. Declaring a greater revolution reverses every player’s rank and cancels all card exchanges for this round.":"De speler met beide Narren is de Grote Dienaar. Een grote revolutie keert de volledige rangorde om en schrapt alle kaartenruil voor deze ronde.",
+"Holding both Jesters lets a player declare a revolution. All card exchanges are cancelled for this round; everyone keeps their rank.":"Een speler met beide Narren mag een revolutie uitroepen. Alle kaartenruil vervalt voor deze ronde; iedereen behoudt zijn rang.",
+"Continuing to taxes declines the revolution. The usual card exchanges take place.":"Doorgaan naar de belasting betekent afzien van de revolutie. De gebruikelijke kaartenruil gaat dan door.",
+"No player holds both Jesters. The host can continue to taxation.":"Niemand heeft beide Narren. De host kan doorgaan naar de belasting.",
+
 "Review your selection":"Controleer je selectie",
 "Complete your set":"Maak je set compleet",
 "Select cards to play":"Kies kaarten om te spelen",
