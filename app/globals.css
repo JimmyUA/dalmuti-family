@@ -18,15 +18,17 @@ html[lang=nl] .card small{font-size:7px;max-width:100%;overflow-wrap:anywhere}@m
 footer{flex-wrap:wrap;gap:12px;align-items:center}footer a{color:#365448;font-size:12px;letter-spacing:0;padding:12px 0;text-underline-offset:3px}footer a:focus-visible{outline:3px solid #ad7d29;outline-offset:3px}
 
 /* Shared accessibility defaults; keep these after the visual component rules. */
-:is(button,select,summary){min-height:44px}button{touch-action:manipulation}input{font-size:16px}summary{padding:12px 0}
+button{touch-action:manipulation}
 :is(button,a,input,select,summary):focus-visible{outline:3px solid #173f30;outline-offset:3px;box-shadow:0 0 0 3px #fff9df}
 .skip-link{position:absolute;top:-100px;left:16px;z-index:100;background:#fff9df;color:#173f30;padding:14px;border-radius:8px}.skip-link:focus{top:12px}
 p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.handtop>span,.score small,.connection,aside>small,.rules small,.diagnostics small,footer{color:#52634e}
 .felt p{color:#d0ddce}.felt .revolution-guide p,.felt .revolution-note{color:#f4efd5}.felt .table-latest{color:#f4efd5}.felt .eyebrow{color:#dfd49f}input::placeholder{color:#61705e;opacity:1}
-.card{position:relative;width:72px;height:116px}.card small,html[lang=uk] .card small,html[lang=nl] .card small{font-size:10px;line-height:1.15;max-width:100%;overflow-wrap:anywhere}.card.unavailable,.card:disabled{opacity:1;background:#e5e5d8;color:#52634e;border-style:dashed}.card.selected{border-style:solid;background:#debc72;color:#2c5842}.seat{min-width:0}.seat>div{min-width:0;overflow-wrap:anywhere}.avatar{flex-shrink:0}.diagnostics :is(dt,dd){overflow-wrap:anywhere;min-width:0}
-.toast{display:flex;align-items:center;gap:16px;cursor:default;max-height:70vh;overflow:auto}.toast>span{margin:0;min-width:0;overflow-wrap:anywhere}.toast button{flex-shrink:0;min-width:44px;font-size:24px;padding:8px}.replace-player{font-size:12px}.seat small,html[lang=uk] .seat small,.score small,.handtop small,.handtop>span,.connection,aside>small,.event{font-size:12px}
-@media(max-width:400px){.seats{grid-template-columns:minmax(0,1fr)}.game-layout aside{grid-template-columns:minmax(0,1fr)}.hero-cards{height:200px}.hero-card{width:26%;height:150px;padding:8px}.hero-card.one{left:6%}.hero-card.two{left:35%}.hero-card.three{left:64%}.hero-card span{font-size:44px}.hero-card small{font-size:8px}.facts{flex-wrap:wrap}.handtop{flex-wrap:wrap;gap:8px}}
+.card.unavailable,.card:disabled{opacity:1;background:#e5e5d8;color:#52634e;border-style:dashed}.card.selected{border-style:solid;background:#debc72;color:#2c5842}.seat{min-width:0}.seat>div{min-width:0;overflow-wrap:anywhere}.avatar{flex-shrink:0}.diagnostics :is(dt,dd){overflow-wrap:anywhere;min-width:0}
+.toast{display:flex;align-items:center;gap:16px;cursor:default;max-height:70vh;overflow:auto}.toast>span{margin:0;min-width:0;overflow-wrap:anywhere}.toast button{flex-shrink:0;min-width:44px;font-size:24px;padding:8px}
+@media(max-width:400px){.hero-cards{height:200px}.hero-card{width:26%;height:150px;padding:8px}.hero-card.one{left:6%}.hero-card.two{left:35%}.hero-card.three{left:64%}.hero-card span{font-size:44px}.hero-card small{font-size:8px}.facts{flex-wrap:wrap}.handtop{flex-wrap:wrap;gap:8px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 @media(forced-colors:active){.card.selected{outline:3px solid Highlight}.seat.active{outline:2px solid Highlight}}
 
 .hero-card.one{color:#102d22}
+/* Keep the compact two-column sidebar without long translations widening it. */
+@media(max-width:800px){.game-layout aside{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.game-layout aside>*{min-width:0}.panel{overflow-wrap:anywhere}}

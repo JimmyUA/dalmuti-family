@@ -47,3 +47,7 @@ Optional settings: `A11Y_CHROMIUM_PATH` for an existing browser executable; `A11
 - Android TalkBack, iOS VoiceOver and a desktop screen reader: reading order, useful announcement frequency, card selection and complete-game usability.
 - Real-device touch operation and browser text enlargement, plus forced-colour/high-contrast modes.
 - Human review of every language and unusual long player names. Automated checks cover representative states, not every possible table configuration.
+
+## Compact layout follow-up
+
+Following user feedback, the accessibility release's size increases were reverted: original card dimensions and label sizes, supporting-text sizes, input sizes, native summary spacing, and the two-column mobile seats/sidebar layout are restored. The blanket 44-pixel control-height override was removed. The earlier statement about increasing all small controls to 44 pixels describes the initial audit release, not this follow-up. Keyboard/screen-reader improvements, focus outlines, stronger contrast and reduced-motion support remain. The decorative welcome cards still scale down at narrow widths to prevent horizontal overflow.
