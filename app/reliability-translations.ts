@@ -1,5 +1,12 @@
 export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = {
   uk: {
+"Revolution declined":"Відмова від революції",
+"Dismiss explanation":"Сховати пояснення",
+"A greater revolution was declared. Every player’s rank was reversed and no cards are exchanged this round.":"Оголошено велику революцію. Порядок усіх рангів змінено на протилежний. У цьому раунді обміну картами немає.",
+"A revolution was declared. Everyone keeps their rank and no cards are exchanged this round.":"Оголошено революцію. Ранги залишилися незмінними. У цьому раунді обміну картами немає.",
+"The player with both Jesters declined the revolution. Ranks stay unchanged and the usual card exchanges take place.":"Гравець з обома Блазнями відмовився від революції. Ранги не змінюються, відбудуться звичайні обміни картами.",
+"With both Jesters, a player can cancel card exchanges. If that player is the Greater Peon, declaring also reverses the entire rank order.":"Гравець з обома Блазнями може скасувати обмін картами. Якщо це Великий селянин, оголошення революції також змінює порядок усіх рангів на протилежний.",
+
 "Revolution explained":"Як працює революція",
 "Greater revolution":"Велика революція",
 "Revolution":"Революція",
@@ -38,6 +45,13 @@ export const reliabilityDictionary: Record<'uk'|'nl', Record<string, string>> = 
     'Yes': 'Так', 'No': 'Ні',
   },
   nl: {
+"Revolution declined":"Revolutie afgewezen",
+"Dismiss explanation":"Uitleg sluiten",
+"A greater revolution was declared. Every player’s rank was reversed and no cards are exchanged this round.":"Er is een grote revolutie uitgeroepen. De volledige rangorde is omgekeerd en deze ronde worden geen kaarten geruild.",
+"A revolution was declared. Everyone keeps their rank and no cards are exchanged this round.":"Er is een revolutie uitgeroepen. Iedereen behoudt zijn rang en deze ronde worden geen kaarten geruild.",
+"The player with both Jesters declined the revolution. Ranks stay unchanged and the usual card exchanges take place.":"De speler met beide Narren heeft afgezien van de revolutie. De rangorde blijft gelijk en de gebruikelijke kaartenruil gaat door.",
+"With both Jesters, a player can cancel card exchanges. If that player is the Greater Peon, declaring also reverses the entire rank order.":"Met beide Narren kan een speler de kaartenruil annuleren. Als die speler de Grote Dienaar is, keert de revolutie ook de volledige rangorde om.",
+
 "Revolution explained":"Uitleg over de revolutie",
 "Greater revolution":"Grote revolutie",
 "Revolution":"Revolutie",

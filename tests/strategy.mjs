@@ -70,7 +70,9 @@ assert.throws(()=>setTestScenario(g,'p1','tax'),/Only the host/);assert.throws((
 assert.equal(g.players.reduce((s,p)=>s+p.hand.length,0),80);for(let r=1;r<=12;r++)assert.equal(g.players.flatMap(p=>p.hand).filter(c=>c===r).length,r);
 const host=g.players.find(p=>p.id==='human');if(scenario==='tax')assert(host.hand.filter(c=>c===13).length<=1);else assert.equal(host.hand.filter(c=>c===13).length,2);assert.equal(view(g,'human',42).version,42);
 assert.throws(()=>setTestScenario(g,'human','tax'),/before dealing/);
-if(scenario==='tax'){assert(!g.players.some(p=>p.hand.filter(c=>c===13).length===2));action(g,'human','accept');assert.equal(g.phase,'tax')}else{const last=g.players.at(-1).id;action(g,'human','revolution');assert.equal(g.phase,'playing');if(scenario==='greater-revolution'){assert.equal(last,'human');assert.equal(g.players[0].id,'human')}}
+const declined=structuredClone(g);action(declined,'human','accept');assert.equal(declined.revolutionOutcome,scenario==='tax'?'unavailable':'declined');
+if(scenario==='tax'){assert(!g.players.some(p=>p.hand.filter(c=>c===13).length===2));action(g,'human','accept');assert.equal(g.phase,'tax')}else{const last=g.players.at(-1).id;action(g,'human','revolution');assert.equal(g.phase,'playing');assert.equal(g.revolutionOutcome,scenario==='greater-revolution'?'greater':'normal');assert.equal(view(g,'human').revolutionOutcome,g.revolutionOutcome);if(scenario==='greater-revolution'){assert.equal(last,'human');assert.equal(g.players[0].id,'human')}}
+const nextRound=structuredClone(g);nextRound.phase='results';nextRound.finished=nextRound.players.map(p=>p.id);start(nextRound);assert.equal(nextRound.revolutionOutcome,undefined);
 }
 const normal={...lobby,phase:'lobby',testMode:false};assert.throws(()=>setTestScenario(normal,'human1','tax'),/only available/);
 for(let n=4;n<=8;n++)for(let trial=0;trial<20;trial++){
