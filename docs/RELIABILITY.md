@@ -46,3 +46,7 @@ A single action button keeps a fixed position and size: no selection shows subdu
 ## Revolution guidance retention
 
 The decision window can end quickly when a computer holds both Jesters. Store the round's revolution outcome with the game so a dismissible explanation remains above the table after the decision, including after refresh or reconnect. It reports normal revolution, greater revolution, or a declined revolution and stays until dismissed or the next deal. A Revolution explained button reopens a dismissed explanation during the same round. The next deal clears the stored outcome. This does not pause play or extend computer delays; no database migration is needed.
+
+## Skip while computers are moving
+
+Skip requests capture the current round. The server accepts an older version within that round only after all humans have finished, so a computer move between rendering and clicking cannot reject the skip. Future versions and different rounds are rejected. Card actions retain exact-version validation. A second skip acknowledges an already-running skip or completed results without executing another batch or scoring again. Request receipts still protect retries and lost responses. Clients without a round retain the original exact-version behavior.

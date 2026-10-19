@@ -70,7 +70,7 @@ export class GameConnection {
   async send(type: string, name: string, code: string, extra: Record<string, any> = {}) {
     if (this.pending || this.recovery || !this.state.id || this.stopped) return;
     if (this.state.game && !this.state.connected) { this.wake(); return; }
-    const request: PendingAction = { ...extra, type, id: this.state.id, name, code: this.state.game?.code || code.toUpperCase(), requestId: this.deps.uuid(),
+    const request: PendingAction = { ...extra, ...(type==='skip-to-results'?{round:this.state.game?.round}:{}), type, id: this.state.id, name, code: this.state.game?.code || code.toUpperCase(), requestId: this.deps.uuid(),
       ...(!['create', 'join'].includes(type) ? { expectedVersion: this.state.game?.version } : {}) };
     try {
       const existing = this.deps.storage.getItem(PENDING_KEY);

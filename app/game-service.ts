@@ -10,7 +10,7 @@ type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: str
 type Row = { state: string; version: number; last_activity:number };
 type Statement = { bind(...args: any[]): Statement; first<T>(): Promise<T | null>; run(): Promise<{ meta: { changes?: number } }> };
 export type Database = { prepare(sql: string): Statement };
-export type GameRequest = { type: string; id: string; code?: string; name?: string; requestId?: string; expectedVersion?: number; cards?: number[]; scenario?: string; practice?: boolean; testMode?: boolean; target?: number };
+export type GameRequest = { type: string; id: string; code?: string; name?: string; requestId?: string; expectedVersion?: number; cards?: number[]; scenario?: string; practice?: boolean; testMode?: boolean; target?: number; round?: number };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const moves = new Set(['skip-to-results', 'start', 'play', 'pass', 'tax', 'accept', 'revolution', 'add-bot', 'remove-bot', 'set-scenario', 'replace-player', 'reclaim-seat', 'leave-room']);
 export const RECEIPT_LIMIT = 1024;
@@ -72,7 +72,7 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
   const fingerprint = await digest(JSON.stringify({
     type: request.type, player: request.id, code: String(request.code || '').toUpperCase(),
     name: request.type === 'create' || request.type === 'join' ? String(request.name || 'Player').slice(0, 24) : undefined,
-    expectedVersion: request.expectedVersion, cards: request.cards, scenario: request.scenario,target:request.target,
+    expectedVersion: request.expectedVersion, cards: request.cards, scenario: request.scenario,target:request.target,round:request.round,
     practice: request.practice === true, testMode: request.testMode === true,
   }));
   if (request.type === 'create') {
@@ -136,8 +136,13 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     if (request.type !== 'join') {
       if (!member) return response({ error: 'Join this room first.' }, 403);
       if(game.players.find(p=>p.id===request.id)?.substituted&&!['reclaim-seat','leave-room'].includes(request.type))return response({error:'You can reclaim your seat between rounds.'},400);
-      // An evicted receipt cannot reapply: its original version is now stale.
-      if (!Number.isSafeInteger(request.expectedVersion) || request.expectedVersion !== row.version) {
+      // Skip is a round-scoped intent: computer polls may advance the version
+      // before the click arrives. Card moves still require the exact version.
+      const roundSkip=request.type==='skip-to-results'&&request.round===game.round;
+      const safeSkip=roundSkip&&request.expectedVersion!<=row.version&&
+        game.finished.includes(request.id)&&(canSkipComputers(game)||game.phase==='results');
+      if ((request.type==='skip-to-results'&&request.round!==undefined&&!roundSkip)||
+          (!safeSkip&&request.expectedVersion !== row.version)) {
         return response({ error: 'The game changed. Review the table and try again.', snapshot: publicView(game, request.id, row.version,presence,now) }, 409);
       }
     }
@@ -149,9 +154,9 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
         }
         else game.players.find(p=>p.id===request.id)!.left=false;
       } else if(request.type==='skip-to-results'){
-        if(!canSkipComputers(game)||!game.finished.includes(request.id)||game.players.find(p=>p.id===request.id)?.bot)throw Error('Wait until all human players have finished the round.');
-        game.skipComputerWait=true;
-        skipComputerBatch(game,now);
+        const alreadyDone=request.round===game.round&&game.phase==='results'&&game.finished.includes(request.id);
+        if((!alreadyDone&&!canSkipComputers(game))||!game.finished.includes(request.id)||game.players.find(p=>p.id===request.id)?.bot)throw Error('Wait until all human players have finished the round.');
+        if(!alreadyDone&&!game.skipComputerWait){game.skipComputerWait=true;skipComputerBatch(game,now)}
       } else if(['replace-player','reclaim-seat','leave-room'].includes(request.type))lifecycleAction(game,request.id,request.type,request.target,presence,now);
       else if (request.type === 'set-scenario') setTestScenario(game, request.id, request.scenario!);
       else action(game, request.id, request.type, request.cards);

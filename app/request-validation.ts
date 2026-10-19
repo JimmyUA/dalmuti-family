@@ -6,7 +6,7 @@ export function validateRequest(value:unknown):GameRequest{
  if(!value||typeof value!=='object'||Array.isArray(value))return bad();
  const b=value as Record<string,unknown>;
  if(typeof b.type!=='string'||!types.includes(b.type))return bad();
- const allowed=new Set(['type','id','code','name',...(b.type==='poll'?[]:['requestId']),...(!['create','join','poll'].includes(b.type)?['expectedVersion']:[]),...(['play','tax'].includes(b.type)?['cards']:[]),...(b.type==='create'?['practice','testMode']:[]),...(b.type==='set-scenario'?['scenario']:[]),...(b.type==='replace-player'?['target']:[])]);
+ const allowed=new Set(['type','id','code','name',...(b.type==='poll'?[]:['requestId']),...(!['create','join','poll'].includes(b.type)?['expectedVersion']:[]),...(['play','tax'].includes(b.type)?['cards']:[]),...(b.type==='create'?['practice','testMode']:[]),...(b.type==='set-scenario'?['scenario']:[]),...(b.type==='replace-player'?['target']:[]),...(b.type==='skip-to-results'?['round']:[])]);
  if(Object.keys(b).some(k=>!allowed.has(k)))return bad();
  if(typeof b.id!=='string'||!uuid.test(b.id))return bad();
  if(b.type!=='poll'&&(typeof b.requestId!=='string'||!uuid.test(b.requestId)))return bad();
@@ -15,6 +15,7 @@ export function validateRequest(value:unknown):GameRequest{
  if(b.name!==undefined&&(typeof b.name!=='string'||b.name.length>24||/[\u0000-\u001f\u007f]/.test(b.name)))return bad();
  if(['create','join'].includes(b.type)&&(typeof b.name!=='string'||!b.name.trim()))return bad();
  if(!['create','join','poll'].includes(b.type)&&(!Number.isSafeInteger(b.expectedVersion)||(b.expectedVersion as number)<0))return bad();
+ if(b.round!==undefined&&(!Number.isSafeInteger(b.round)||(b.round as number)<1))return bad();
  if(['play','tax'].includes(b.type)&&(!Array.isArray(b.cards)||!b.cards.length||b.cards.length>80||b.cards.some(c=>!Number.isInteger(c)||c<1||c>13)))return bad();
  if(b.type==='tax'&&(b.cards as number[]).length>2)return bad();
  if(b.type==='replace-player'&&(!Number.isInteger(b.target)||(b.target as number)<0||(b.target as number)>7))return bad();

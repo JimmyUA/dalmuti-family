@@ -218,6 +218,7 @@ try {
   const valid={type:'play',id,requestId:crypto.randomUUID(),code:'ABC123',expectedVersion:1,cards:[4,4]};
   for(const invalid of [null,[],{}, {...valid,id:'bot-1'}, {...valid,type:'unknown'}, {...valid,cards:[]}, {...valid,cards:[0]}, {...valid,cards:[14]}, {...valid,cards:[2.5]}, {...valid,cards:Array(81).fill(4)}, {...valid,cards:'4'}, {...valid,expectedVersion:-1}, {...valid,expectedVersion:'1'}, {...valid,expectedVersion:Number.MAX_SAFE_INTEGER+1}, {...valid,host:true}, {...valid,name:'x'.repeat(25)}, {...valid,name:'x\n'}, {...valid,code:'123'}, {...valid,type:'pass'}, {...valid,type:'replace-player',cards:undefined,target:99}, {...valid,type:'poll'}])assert.throws(()=>validateRequest(invalid));
   assert.equal(validateRequest(valid).cards.length,2);
+  for(const round of [0,-1,1.5,'1',null,Number.MAX_SAFE_INTEGER+1])assert.throws(()=>validateRequest({type:'skip-to-results',id,code:'ABC123',requestId:crypto.randomUUID(),expectedVersion:0,round}));
   assert.throws(()=>validateRequest({type:'create',id,requestId:crypto.randomUUID(),name:'   '}));
   const securityDb=database();let dbAccess=0;
   const spyDb={prepare(sql){dbAccess++;return securityDb.db.prepare(sql)}};
@@ -368,6 +369,40 @@ try {
     assert.deepEqual(completed.players,normal.players);assert.deepEqual(completed.finished,normal.finished);
     const next=await invoke({...request,type:'start',requestId:crypto.randomUUID(),expectedVersion:snapshot.version});
     assert.equal(next.status,200);assert.equal(next.data.skippingComputers,false);assert.equal(next.data.canSkipComputers,false);
+    // The button was rendered at version 0, then another poll advances a bot.
+    reset({...state,computerDueAt:10000});
+    assert.equal((await invoke(pollBody)).data.version,1);
+    const roundRequest={...request,requestId:crypto.randomUUID(),round:state.round};
+    const raced=await invoke(roundRequest);
+    assert.equal(raced.status,200);assert.equal(raced.data.acknowledgedRequestId,roundRequest.requestId);
+    const saved=fixture.sqlite.prepare('SELECT state FROM rooms').get().state;
+    assert.equal((await invoke(roundRequest)).status,200);
+    assert.equal(fixture.sqlite.prepare('SELECT state FROM rooms').get().state,saved);
+    // Another human's concurrent skip is acknowledged without executing more moves.
+    const second=await invoke({...roundRequest,requestId:crypto.randomUUID()});
+    assert.equal(second.status,200);
+    assert.deepEqual(JSON.parse(fixture.sqlite.prepare('SELECT state FROM rooms').get().state).players,JSON.parse(saved).players);
+    let result=second.data;
+    for(let batch=0;result.phase!=='results'&&batch<100;batch++)result=(await invoke(pollBody)).data;
+    const late=await invoke({...roundRequest,requestId:crypto.randomUUID()});
+    assert.equal(late.status,200);assert.deepEqual(late.data.finished,result.finished);
+    const rowBefore=fixture.sqlite.prepare('SELECT state FROM rooms').get().state;
+    for(const bad of [{round:state.round-1||2},{expectedVersion:99999}]){
+      assert.equal((await invoke({...roundRequest,...bad,requestId:crypto.randomUUID()})).status,409);
+      assert.equal(fixture.sqlite.prepare('SELECT state FROM rooms').get().state,rowBefore);
+    }
+    reset({...state,round:state.round+1});
+    assert.equal((await invoke({...roundRequest,expectedVersion:0})).status,409);
+    reset(blocked);
+    assert.equal((await invoke({...roundRequest,requestId:crypto.randomUUID()})).status,400);
+    // Connection captures the round automatically and persists it for retry/reload.
+    reset(state);
+    const clientStore=storage({'dalmuti-id':human,'dalmuti-room':pacedCode});
+    const client=new GameConnection(deps(clientStore,async body=>invoke(body)));
+    client.start();await client.tick();await client.send('skip-to-results','Human',pacedCode);
+    assert.equal(JSON.parse(clientStore.getItem(PENDING_KEY)).round,state.round);
+    await client.tick();assert.equal(client.state.pending,false);assert.equal(client.state.error,'');client.stop();
+
   }
   console.log('Passed: optional skip to results, remaining-human guard, normal rankings/scoring, bounded batches, concurrent requests, replay safety and next-round reset.');
   console.log('Passed: paced computer moves, concurrent poll CAS, replay safety, legacy deadlines and separate tax choices.');
