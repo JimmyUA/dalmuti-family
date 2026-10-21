@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: game-ci-${{ github.ref }}
+  group: ${{ github.ref == 'refs/heads/main' && 'crownturn-production' || format('game-ci-{0}', github.ref) }}
   cancel-in-progress: false
 
 jobs:
@@ -48,6 +48,9 @@ jobs:
       - name: Test reconnects and retry-safe actions
         run: node tests/reliability.mjs
 
+      - name: Test production recovery guards
+        run: node tests/recovery.mjs
+
       - name: Build production application
         run: pnpm build:production
       - name: Test production Worker routing
@@ -68,6 +71,6 @@ jobs:
           fi
           node scripts/prepare-cloudflare-deploy.mjs
           pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/github-deploy.json
-          pnpm exec wrangler deploy --config dist/server/github-deploy.json | tee /tmp/dalmuti-deploy.log
+          pnpm exec wrangler deploy --config dist/server/github-deploy.json --tag "$GITHUB_SHA" | tee /tmp/dalmuti-deploy.log
           node scripts/smoke-check.mjs /tmp/dalmuti-deploy.log
 

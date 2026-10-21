@@ -64,3 +64,7 @@ Both accept hours from 1 through 8760, including fractional hours. Missing value
 A scheduled Worker deletes up to 100 expired rooms every 15 minutes. Requests also enforce expiry immediately. Authenticated member requests renew activity; successful joins renew it too. Failed joining attempts and scheduled cleanup do not. Computer state updates never renew activity themselves. An open human game tab counts as activity.
 
 Migration `0002_room_expiry.sql` gives existing rooms a fresh grace period. Deletion removes presence atomically using a database trigger. Minimal room-code tombstones are retained for 30 days so returning clients receive an expiry message; afterward they receive room-not-found. Expired room contents cannot be restored. The health endpoint checks the new schema before deployment smoke checks succeed.
+
+### Recovery runbook
+
+See [Production recovery](RECOVERY.md) for the manual GitHub workflow, a read-only rehearsal, compatibility checks, and post-recovery validation. New deployments tag Cloudflare versions with the full Git release SHA. Recovery restores an existing Worker version without rebuilding source or changing D1 migrations/data.
