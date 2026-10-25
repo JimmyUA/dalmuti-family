@@ -1,4 +1,8 @@
 export const nl:Record<string,string>={
+"Help & feedback":"Hulp en feedback",
+"Crownturn — question, bug report or suggestion":"Crownturn — vraag, foutmelding of suggestie",
+"Email us with questions, bug reports or suggestions.":"Mail ons met vragen, foutmeldingen of suggesties.",
+
 "Skip to results":"Naar de uitslag",
 "All human players have finished. Watch the computers or skip to the results.":"Alle menselijke spelers zijn klaar. Kijk verder of ga naar de uitslag.",
 "Finishing computer turns…":"Computerbeurten worden afgerond…",

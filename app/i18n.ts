@@ -3,6 +3,10 @@ import { reliabilityDictionary } from './reliability-translations';
 import {nl,nlDynamic} from './dutch';
 export type Language = "en" | "uk" | "nl";
 const uk:Record<string,string>={
+"Help & feedback":"Допомога та відгуки",
+"Crownturn — question, bug report or suggestion":"Crownturn — запитання, повідомлення про помилку чи пропозиція",
+"Email us with questions, bug reports or suggestions.":"Напишіть нам, якщо маєте запитання, помітили помилку чи хочете запропонувати покращення.",
+
 "Skip to results":"До результатів",
 "All human players have finished. Watch the computers or skip to the results.":"Усі гравці-люди завершили раунд. Дивіться гру комп’ютерів або перейдіть до результатів.",
 "Finishing computer turns…":"Завершуємо ходи комп’ютерів…",

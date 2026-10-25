@@ -4,3 +4,7 @@ export const legacyGameText:Record<string,string>={
  'Taxation · Dalmutis choose their return cards':'Taxation · Royals choose their return cards',
  'Only the Dalmutis choose tax cards.':'Only the royals choose tax cards.',
 };
+
+// Keep feedback drafts free of room, player and session data.
+export const SUPPORT_EMAIL='sergii.prykhodko@gmail.com';
+export const supportMailto=(subject:string)=>'mailto:'+SUPPORT_EMAIL+'?subject='+encodeURIComponent(subject);
