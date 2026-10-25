@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import worker from '../dist/server/index.js';
 const config=JSON.parse(readFileSync('dist/server/wrangler.json','utf8'));
-assert.deepEqual(config.assets.run_worker_first,['/api/*']);
+assert.deepEqual(config.assets.run_worker_first,['/api/*','/']);
 assert.equal(config.assets.binding,'ASSETS');
 assert.deepEqual(config.triggers.crons,['*/15 * * * *']);
 assert.equal(typeof worker.scheduled,'function');
@@ -42,3 +42,22 @@ assert.equal(privacyLanguage('','nl','en'), 'nl');
 assert.equal(privacyLanguage('?lang=invalid',null,'uk-UA',true),'uk');
 assert.equal(privacyLanguage('',null,'fr-FR',true),'en');
 console.log('Passed: static privacy page, three languages, language preference and blocked-storage fallback.');
+
+// Public pages are crawlable without JavaScript; invitations stay out of search.
+assert.match(page,/<link rel="canonical" href="https:\/\/crownturn.com\/">/);
+assert.match(page,/<meta property="og:image" content="https:\/\/crownturn.com\/share.png">/);
+assert.match(page,/<h1>Crownturn/);
+for(const lang of ['en','uk','nl']){
+ const guide=readFileSync(`dist/client/${lang}/how-to-play.html`,'utf8');
+ assert.match(guide,new RegExp(`<html lang="${lang}">`));
+ assert.match(guide,new RegExp(`rel="canonical" href="https://crownturn.com/${lang}/how-to-play.html"`));
+ for(const other of ['en','uk','nl'])assert(guide.includes(`hreflang="${other}"`));
+ assert(guide.includes('<ol>'));assert(!guide.includes('<script'));
+}
+const sitemap=readFileSync('dist/client/sitemap.xml','utf8');assert.equal((sitemap.match(/<loc>/g)||[]).length,4);assert(!sitemap.includes('?room='));
+assert.match(readFileSync('dist/client/robots.txt','utf8'),/Sitemap: https:\/\/crownturn.com\/sitemap.xml/);
+const image=readFileSync('dist/client/share.png');assert.equal(image.readUInt32BE(16),1200);assert.equal(image.readUInt32BE(20),630);
+const staticOnly={ASSETS:{fetch:async()=>new Response('Crownturn')}};
+for(const url of ['https://crownturn.com/?room=ABC123','https://dalmuti-family.sergii-pryhodko.workers.dev/'])assert.equal((await worker.fetch(new Request(url),staticOnly)).headers.get('X-Robots-Tag'),'noindex, follow');
+assert.equal((await worker.fetch(new Request('https://crownturn.com/'),staticOnly)).headers.get('X-Robots-Tag'),null);
+console.log('Passed: canonical metadata, static multilingual guides, sitemap, share image and room indexing headers.');

@@ -1,3 +1,5 @@
+import {writeSeo,metadata} from './seo.mjs';
+import {readFileSync,copyFileSync} from 'node:fs';
 import {renderPrivacyPage} from './privacy-page.mjs';
 import {build} from 'vite';
 import react from '@vitejs/plugin-react';
@@ -8,6 +10,11 @@ if(release!=='development'&&!/^[a-f0-9]{40}$/i.test(release))throw Error('Invali
 const define={__RELEASE_SHA__:JSON.stringify(release)};
 await build({configFile:false,root:'production',define,plugins:[react()],css:{postcss:{plugins:[tailwind()]}},build:{outDir:'../dist/client',emptyOutDir:true}});
 writeFileSync('dist/client/privacy.html',renderPrivacyPage());
+const page=readFileSync('dist/client/index.html','utf8').replace(/<meta name="description"[^>]*>/,'').replace(/<meta property="og:[^"]+"[^>]*>/g,'').replace('</head>',metadata()+'</head>');
+writeFileSync('dist/client/index.html',page);
+writeSeo();
+copyFileSync('assets/share.png','dist/client/share.png');
+copyFileSync('production/crownturn.svg','dist/client/crownturn.svg');
 await build({configFile:false,define,ssr:{noExternal:true},build:{ssr:'production/worker.ts',outDir:'dist/server',emptyOutDir:true,rollupOptions:{output:{entryFileNames:'index.js'}}}});
 mkdirSync('dist/server',{recursive:true});
-writeFileSync('dist/server/wrangler.json',JSON.stringify({name:'dalmuti-family',main:'index.js',no_bundle:true,compatibility_date:'2026-05-15',assets:{directory:'../client',binding:'ASSETS',run_worker_first:['/api/*']},triggers:{crons:['*/15 * * * *']},observability:{enabled:true}},null,2)+'\n');
+writeFileSync('dist/server/wrangler.json',JSON.stringify({name:'dalmuti-family',main:'index.js',no_bundle:true,compatibility_date:'2026-05-15',assets:{directory:'../client',binding:'ASSETS',run_worker_first:['/api/*','/']},triggers:{crons:['*/15 * * * *']},observability:{enabled:true}},null,2)+'\n');

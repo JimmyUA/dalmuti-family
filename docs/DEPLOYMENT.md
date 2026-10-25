@@ -68,3 +68,11 @@ Migration `0002_room_expiry.sql` gives existing rooms a fresh grace period. Dele
 ### Recovery runbook
 
 See [Production recovery](RECOVERY.md) for the manual GitHub workflow, a read-only rehearsal, compatibility checks, and post-recovery validation. New deployments tag Cloudflare versions with the full Git release SHA. Recovery restores an existing Worker version without rebuilding source or changing D1 migrations/data.
+
+### Public pages and search
+
+The canonical public origin is `https://crownturn.com/`. Production builds generate static English, Ukrainian and Dutch guides at `/{en,uk,nl}/how-to-play.html`, reciprocal language links, robots.txt, sitemap.xml and a 1200×630 PNG share image. The game footer links to the selected language's guide. Submit the sitemap in your search-console account after deployment; indexing is controlled by search engines and is not immediate.
+
+The root page now passes through a minimal Worker handler solely to set `X-Robots-Tag: noindex, follow` on room invitation URLs and the workers.dev root. It serves the existing static asset without game/database work or SSR. Other public assets and guides remain served directly. This replaces the earlier API-only `run_worker_first` configuration; recheck live CPU metrics after release. Preview URLs remain version access, not isolated staging. Public guide pages use the canonical domain in metadata even when accessed via another host.
+
+After CI succeeds, fetch the live root, each guide, robots.txt, sitemap.xml and share.png; inspect the header on `/?room=TEST00` without joining a room. Check the share preview in the target messaging app. Existing cached previews may take time to refresh. Search controls are not access controls; private cards/session identifiers remain protected by the API.
