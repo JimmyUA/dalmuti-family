@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import ts from 'typescript';
+import {readFileSync} from 'node:fs';
+const source=ts.transpileModule(readFileSync('app/table-events.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;
+const {recentTableEvent:event}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const p={code:'ABCDEF',version:2,log:['Anna passed','Oliver played 2 × 9'],at:1000};
+const current={code:p.code,version:3,log:['You played 2 × 7',...p.log]};
+assert.equal(event(null,current,2000),'');
+assert.equal(event(p,current,2000),'You played 2 × 7');
+assert.equal(event(p,{...current,log:p.log},2000),'');
+assert.equal(event(p,{...current,version:1},2000),'');
+assert.equal(event(p,{...current,code:'123ABC'},2000),'');
+assert.equal(event(p,current,12000),'');
+assert.equal(event(p,current,2000,false),'');
+assert.equal(event(p,{...current,log:['Anna passed',...p.log]},2000),'Anna passed');
+assert.equal(event(p,{...current,log:['Anna won the trick and leads','Emma passed',...p.log]},2000),'Anna won the trick and leads');
+console.log('Passed: inline event detection, duplicates, coalescing, stale versions, room switching and reconnect/hidden-tab suppression.');

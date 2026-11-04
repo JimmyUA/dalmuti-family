@@ -28,7 +28,7 @@ try{
  if(phase==='playing'&&lang==='en'){
  await page.keyboard.press('Tab');const first=await page.evaluate(()=>document.activeElement.className);if(first!=='skip-link')throw Error('Skip link not first keyboard stop');await page.keyboard.press('Enter');if(await page.evaluate(()=>document.activeElement.id)!=='game-content')throw Error('Skip link does not focus game');
  const c=page.locator('.card').first();await c.focus();await page.keyboard.press('Space');if(await c.getAttribute('aria-pressed')!=='true')throw Error('Keyboard card selection failed');if(await page.locator('.table-action').isEnabled())throw Error('Partial set enabled Play');await page.locator('.card').nth(1).focus();await page.keyboard.press('Enter');if(!await page.locator('.table-action').isEnabled())throw Error('Valid keyboard set disabled Play');await page.locator('.clear-selection').click();
- await page.getByRole('button',{name:/Room ABCDEF/}).click();await page.locator('.toast button').focus();await page.keyboard.press('Enter');if(await page.locator('.toast').count())throw Error('Keyboard dismissal failed');
+ await page.getByRole('button',{name:/Room ABCDEF/}).click();await page.locator('.table-error button').focus();await page.keyboard.press('Enter');if(await page.locator('.table-error').count())throw Error('Keyboard dismissal failed');
  await page.emulateMedia({reducedMotion:'reduce'});if(await c.evaluate(el=>getComputedStyle(el).transitionDuration)!=='0s')throw Error('Reduced motion ignored');
  if(process.env.A11Y_SCREENSHOT_PREFIX)await page.screenshot({path:process.env.A11Y_SCREENSHOT_PREFIX+'-playing.png',fullPage:true});
  }

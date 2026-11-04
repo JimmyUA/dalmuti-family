@@ -1,4 +1,16 @@
 export const nl:Record<string,string>={
+"Show new moves":"Nieuwe zetten tonen",
+"History":"Geschiedenis",
+"Players":"Spelers",
+"Round information":"Ronde-informatie",
+"Table menu":"Tafelmenu",
+"Table controls":"Tafelbediening",
+"Close panel":"Paneel sluiten",
+"Most recent first":"Nieuwste eerst",
+"Focus mode":"Focusmodus",
+"Exit focus mode":"Focusmodus verlaten",
+"No revolution has been declared this round.":"Er is deze ronde geen revolutie uitgeroepen.",
+
 "Help & feedback":"Hulp en feedback",
 "Crownturn — question, bug report or suggestion":"Crownturn — vraag, foutmelding of suggestie",
 "Email us with questions, bug reports or suggestions.":"Mail ons met vragen, foutmeldingen of suggesties.",

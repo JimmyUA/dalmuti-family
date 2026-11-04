@@ -43,7 +43,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test game rules, strategy and reliability scenarios
-        run: node tests/strategy.mjs
+        run: |
+          node tests/strategy.mjs
+          node tests/table-events.mjs
 
       - name: Test reconnects and retry-safe actions
         run: node tests/reliability.mjs

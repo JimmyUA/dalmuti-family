@@ -3,6 +3,18 @@ import { reliabilityDictionary } from './reliability-translations';
 import {nl,nlDynamic} from './dutch';
 export type Language = "en" | "uk" | "nl";
 const uk:Record<string,string>={
+"Show new moves":"Показати нові ходи",
+"History":"Історія",
+"Players":"Гравці",
+"Round information":"Інформація про раунд",
+"Table menu":"Меню столу",
+"Table controls":"Керування столом",
+"Close panel":"Закрити панель",
+"Most recent first":"Найновіші події спочатку",
+"Focus mode":"Режим зосередження",
+"Exit focus mode":"Вийти з режиму зосередження",
+"No revolution has been declared this round.":"У цьому раунді революцію не оголошено.",
+
 "Help & feedback":"Допомога та відгуки",
 "Crownturn — question, bug report or suggestion":"Crownturn — запитання, повідомлення про помилку чи пропозиція",
 "Email us with questions, bug reports or suggestions.":"Напишіть нам, якщо маєте запитання, помітили помилку чи хочете запропонувати покращення.",
