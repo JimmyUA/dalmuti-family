@@ -26,6 +26,10 @@ try{
  const overflow=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  results.push({lang,phase,width,overflow,violations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});
  if(phase==='playing'&&lang==='en'){
+ const composition=await page.locator('.table-stage').evaluate(stage=>{const pile=document.querySelector('.pile').getBoundingClientRect(),area=stage.getBoundingClientRect();return {position:((pile.top+pile.bottom)/2-area.top)/area.height}});
+ if(composition.position<0.2||composition.position>0.75)throw Error('Played set is not centred in the table stage');
+ if(await page.locator('.game-active .table-toolbar').count())throw Error('Extra toolbar breaks prototype layout');
+
  await page.keyboard.press('Tab');const first=await page.evaluate(()=>document.activeElement.className);if(first!=='skip-link')throw Error('Skip link not first keyboard stop');await page.keyboard.press('Enter');if(await page.evaluate(()=>document.activeElement.id)!=='game-content')throw Error('Skip link does not focus game');
  const c=page.locator('.card').first();await c.focus();await page.keyboard.press('Space');if(await c.getAttribute('aria-pressed')!=='true')throw Error('Keyboard card selection failed');if(await page.locator('.table-action').isEnabled())throw Error('Partial set enabled Play');await page.locator('.card').nth(1).focus();await page.keyboard.press('Enter');if(!await page.locator('.table-action').isEnabled())throw Error('Valid keyboard set disabled Play');await page.locator('.clear-selection').click();
  await page.getByRole('button',{name:/Room ABCDEF/}).click();await page.locator('.table-error button').focus();await page.keyboard.press('Enter');if(await page.locator('.table-error').count())throw Error('Keyboard dismissal failed');
