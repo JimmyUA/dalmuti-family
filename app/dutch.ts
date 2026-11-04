@@ -1,4 +1,8 @@
 export const nl:Record<string,string>={
+"Clear":"Wissen",
+"Select a matching set.":"Kies een passende set.",
+"No matching set. You can pass.":"Geen passende set. Je kunt passen.",
+
 "Show new moves":"Nieuwe zetten tonen",
 "History":"Geschiedenis",
 "Players":"Spelers",

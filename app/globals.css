@@ -118,3 +118,29 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .game-active .card{flex:0 0 48px;width:48px}.game-active .play-actions{grid-template-columns:minmax(0,1fr)}.game-active .table-action{border-radius:12px}
 .hand-feedback{display:flex;align-items:center;justify-content:space-between;gap:10px}.hand-feedback .move-hint{flex:1}.game-active .hand-feedback .clear-selection{min-height:28px;padding:4px 0;font-size:10px;text-decoration:underline;flex-shrink:0;max-width:80px}
 @media(max-width:350px){.game-active>header{height:44px;min-height:44px}.game-active .seats:has(.seat:nth-child(5)){gap:4px}.game-active .seats:has(.seat:nth-child(5)) .seat{padding:4px 5px;gap:1px}.game-active .seats:has(.seat:nth-child(5)) .seat b,.game-active .seats:has(.seat:nth-child(5)) .seat>span:last-child{line-height:12px}.game-active .cards{scrollbar-width:none;padding-bottom:4px}.game-active .cards::-webkit-scrollbar{display:none}.game-active .card{height:70px}.game-active .card small{display:none}.game-active .hand-feedback .move-hint{margin:0;font-size:10px;line-height:1.3}.game-active .hand-feedback{min-height:28px;margin:2px 0}.game-active .table-foot{min-height:30px;padding-top:5px;margin-top:5px}.felt .history-chip{padding:6px 8px}.game-active .table-notification{height:28px;min-height:28px}}
+/* Prototype finish. Reset the Tailwind .outline utility on our outlined buttons;
+   the explicit :focus-visible treatment above still supplies keyboard focus. */
+.outline:not(:focus-visible){outline:none}
+.game-active .card{font:24px/1 Georgia,serif;align-items:center;justify-content:space-between;gap:0;height:85px;padding:7px 5px;border:1px solid #d3d9ca;border-radius:8px;background:#fdfbf3;box-shadow:0 2px 3px #163f3510;overflow:hidden}
+.game-active .card b{align-self:center;font:24px/1 Georgia,serif;flex-shrink:0}
+.game-active .card span{font:25px/1 Georgia,serif;flex-shrink:0;margin:0;color:#5c7d59}
+.game-active .card small{display:none}
+.game-active .card::after{content:'';height:8px;flex-shrink:0}
+.game-active .card[data-rank="13"]::after{content:none}
+.game-active .card[data-rank="13"] small{display:block;font:7px/1 system-ui,sans-serif;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;color:#74816d}
+.game-active .card.unavailable,.game-active .card:disabled{background:#f3f2e9;border:1px solid #dfe3d6;color:#929e8b;box-shadow:none}
+.game-active .card.unavailable span,.game-active .card:disabled span{color:#a8b5a0}
+.game-active .card.selected{background:#fff7e2;border:2px solid #a6803b;box-shadow:0 2px 6px #8e722425;transform:translateY(-7px)}
+.game-active .cards{padding:9px 2px 8px;scrollbar-width:none;min-height:102px}.game-active .cards::-webkit-scrollbar{display:none}
+.game-active .handtop{font-size:12px}.game-active .handtop>span{font-size:10px}.game-active .hand-feedback{gap:12px;min-height:28px;margin:2px 0 4px}.game-active .hand-feedback .move-hint{font-size:10px;line-height:1.35}
+.game-active .felt{border-radius:23px;background:radial-gradient(ellipse at 50% 0,#2a5749,#163e34 80%)}
+.game-active .table-stage .mini-card{align-items:center;background:#f6f2e6;border:1px solid #fff6;border-radius:7px;box-shadow:0 5px 9px #0002}
+.game-active .table-stage .mini-card:nth-child(odd){transform:rotate(-4deg)}.game-active .table-stage .mini-card:nth-child(even){transform:rotate(4deg)}
+.game-active .table-stage .mini-card b{font:26px/1 Georgia,serif}.game-active .table-stage .mini-card span{color:#52755a}
+.game-active .table-stage h2{font:27px/1.15 Georgia,serif}.game-active .table-stage .eyebrow{color:#bdcdbb;font-size:9px;letter-spacing:1.8px}
+.game-active .round-chip{border-color:#ffffff22;color:#eee8d2;background:#ffffff0a}.game-active .table-foot{border-color:#ffffff1b}
+.game-active .seat{background:#eaece2;border-radius:13px}.game-active .seat.active{background:#efe9d7;border-color:#c5a263}
+@media(min-height:740px) and (max-width:600px){.game-active>header{height:62px;min-height:62px;border-bottom:0}.game-active .roomtop{margin:5px 0 11px}.game-active .seats{margin-bottom:12px}.game-active .seat{padding:10px 8px}.game-active .hand{margin-top:16px}.game-active .handtop{margin-bottom:4px}.game-active .play-actions{margin-top:4px}}
+@media(max-width:350px){.game-active .card{height:70px}.game-active .cards{min-height:87px}.game-active .card b{font-size:22px}.game-active .card span{font-size:23px}.game-active .card[data-rank="13"] small{font-size:6px}}
+.game-active .table-action{justify-content:space-between;padding:11px 15px;text-align:left;font-weight:650}.game-active .table-action>span{margin:0}.game-active .table-action>span:last-child{font-size:18px;font-weight:400;flex-shrink:0}
+@media(min-height:740px) and (max-width:600px){.game-active>header{height:56px;min-height:56px}.game-active .roomtop{min-height:18px;margin:2px 0 9px}.game-active .roomtop button{border:0;background:transparent;padding:0 3px}.game-active .roomtop button b{font-size:10px;letter-spacing:1px}.game-active .roomtop button::after{content:' ⧉';font-size:12px;margin-left:4px}.game-active .table-stage .mini-card{width:56px;height:83px;padding:6px}.game-active .table-stage .mini-card b{font-size:27px}.game-active .table-stage .mini-card span{font-size:25px}}

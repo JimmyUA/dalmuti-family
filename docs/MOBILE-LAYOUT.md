@@ -42,3 +42,7 @@ Follow-up browser verification: at 320×640 with eight seats and 20 cards, the a
 ### Move-confirmation status
 
 The pending-action confirmation message now uses the reserved on-table notification area during a round. It stays visible until acknowledgement, then gives way to the move event. The top recovery banner remains only for entry/lobby recovery, where there is no in-round notification area. The QA transport simulates a 1.2-second acknowledgement delay to verify Pass does not render a top banner or shift controls. Retry-safe action storage, disabled controls and retry logic are unchanged.
+
+### Card and visual finish
+
+Numbered cards use the prototype’s rank-and-symbol face. Full localized card names remain in `aria-label` and `title`; only the Jester keeps a small visible label, constrained to one line. Card contents are bounded and cannot spill into the hint/action row. Unfocused outlined buttons explicitly reset the conflicting Tailwind outline utility while retaining keyboard `:focus-visible` styling. Tall-phone spacing and pile sizes were compared with the reviewed prototype in adjacent 390×844 frames using the same seven-card hand. A fresh-trick state, 13/22-card hands and all three languages must remain in visual review.

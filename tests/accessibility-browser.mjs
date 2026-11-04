@@ -14,7 +14,7 @@ const results=[];
 try{
  for(const [lang,phase,width] of [['en','welcome',320],['en','playing',320],['uk','playing',320],['nl','playing',320],['en','tax',390],['en','revolution',390],['en','results',1280],['en','lobby',390],['nl','privacy',320]]){
  const context=await browser.newContext({viewport:{width,height:900}});const page=await context.newPage();
- let game={code:'ABCDEF',host:id,round:1,version:1,phase,players:[{id,name:'Jimmy',hand:[3,3,7,13],count:4,presence:'online',score:3,wins:1},...['Oliver','Matilda','Emma'].map((name,i)=>({id:'seat-'+(i+1),name,hand:[],count:5,presence:'online',score:2,wins:0,bot:true}))],turn:0,last:1,pile:[4,4],finished:phase==='results'?[id,'seat-1','seat-2','seat-3']:[],tax:{},log:['Oliver played 2 × 4'],revolution:phase==='revolution'?id:undefined};
+ let game={code:'ABCDEF',host:id,round:1,version:1,phase,players:[{id,name:'Jimmy',hand:[3,3,7,10,11,13],count:6,presence:'online',score:3,wins:1},...['Oliver','Matilda','Emma'].map((name,i)=>({id:'seat-'+(i+1),name,hand:[],count:5,presence:'online',score:2,wins:0,bot:true}))],turn:0,last:1,pile:[4,4],finished:phase==='results'?[id,'seat-1','seat-2','seat-3']:[],tax:{},log:['Oliver played 2 × 4'],revolution:phase==='revolution'?id:undefined};
  if(phase==='lobby'){game.round=0;game.pile=[]}
  await page.addInitScript(({lang,id,phase})=>{localStorage.setItem('dalmuti-language',lang);localStorage.setItem('dalmuti-id',id);localStorage.setItem('dalmuti-name','Jimmy');if(!['welcome','privacy'].includes(phase))localStorage.setItem('dalmuti-room','ABCDEF')},{lang,id,phase});
  await page.route('**/api/game',async route=>{const body=route.request().postDataJSON();await route.fulfill({json:{...game,...(body.requestId?{acknowledgedRequestId:body.requestId}:{} )}})});
@@ -25,6 +25,11 @@ try{
  await page.evaluate(axe);const report=await page.evaluate(()=>axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}));
  const overflow=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,client:document.documentElement.clientWidth}));
  results.push({lang,phase,width,overflow,violations:report.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}))});
+
+ if(['playing','tax','revolution'].includes(phase)){
+ const leaking=await page.locator('.card').evaluateAll(cards=>cards.filter(card=>[...card.children].filter(c=>getComputedStyle(c).display!=='none').some(c=>c.getBoundingClientRect().bottom>card.getBoundingClientRect().bottom+1)).length);
+ if(leaking)throw Error('Card content spills into the hint/action area');
+ }
  if(phase==='playing'&&lang==='en'){
  const composition=await page.locator('.table-stage').evaluate(stage=>{const pile=document.querySelector('.pile').getBoundingClientRect(),area=stage.getBoundingClientRect();return {position:((pile.top+pile.bottom)/2-area.top)/area.height}});
  if(composition.position<0.2||composition.position>0.75)throw Error('Played set is not centred in the table stage');
