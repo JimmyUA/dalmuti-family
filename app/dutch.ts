@@ -1,4 +1,8 @@
 export const nl:Record<string,string>={
+"Scores":"Scores",
+"Round wins":"Gewonnen rondes",
+"Total points across rounds. Updated when a round finishes.":"Totaalpunten over alle rondes. Bijgewerkt na afloop van een ronde.",
+
 "Clear":"Wissen",
 "Select a matching set.":"Kies een passende set.",
 "No matching set. You can pass.":"Geen passende set. Je kunt passen.",
