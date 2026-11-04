@@ -8,8 +8,8 @@ function fixture(){
  return {code:'ABCDEF',host:id,phase,round:3,version:1,players,turn:0,last:1,pile:Number(q.get('pile'))===14?[...Array(12).fill(12),13,13]:Array(Number(q.get('pile')||2)).fill(9),finished:phase==='results'?players.map(p=>p.id):[],tax:{},log:['Alexandermatildalongname7 played 2 × 9','Oliver passed','Matilda won the trick and leads'],revolution:phase==='revolution'?id:undefined,revolutionOutcome:phase==='revolution'?undefined:'greater'};
 }
 export function useGameConnection(){
- const [game,setGame]=useState<any>(fixture),[error,setError]=useState('');
+ const [game,setGame]=useState<any>(fixture),[error,setError]=useState(''),[pending,setPending]=useState(false);
  const q=new URLSearchParams(location.search);
- return {game,id,name:'You',code:'ABCDEF',connected:!q.has('offline'),busy:q.has('busy'),lastSync:Date.now(),latency:30,lastError:'',error,restoring:false,pending:q.has('busy'),serverRelease:'development',lastTraceId:'qa-only',
- send:(type:string,_name:string,_code:string,extra:any={})=>{setGame((g:any)=>({...g,version:g.version+1,phase:type==='tax'||type==='accept'||type==='revolution'?'playing':g.phase,log:[type==='play'?'You played '+extra.cards.length+' × '+extra.cards[0]:type==='pass'?'You passed':'Table updated',...g.log].slice(0,20)}))},leave:()=>{},wake:()=>{},dismissError:()=>setError('')};
+ return {game,id,name:'You',code:'ABCDEF',connected:!q.has('offline'),busy:q.has('busy')||pending,lastSync:Date.now(),latency:30,lastError:'',error,restoring:false,pending:q.has('busy')||pending,serverRelease:'development',lastTraceId:'qa-only',
+ send:(type:string,_name:string,_code:string,extra:any={})=>{setPending(true);setTimeout(()=>{setGame((g:any)=>({...g,version:g.version+1,phase:type==='tax'||type==='accept'||type==='revolution'?'playing':g.phase,log:[type==='play'?'You played '+extra.cards.length+' × '+extra.cards[0]:type==='pass'?'You passed':'Table updated',...g.log].slice(0,20)}));setPending(false)},1200)},leave:()=>{},wake:()=>{},dismissError:()=>setError('')};
 }
