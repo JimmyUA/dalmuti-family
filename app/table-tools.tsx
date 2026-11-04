@@ -4,10 +4,11 @@ import {createPortal} from 'react-dom';
 import {recentTableEvent} from './table-events';
 
 type Props={showRules:()=>void;game:any;id:string;t:(s:string)=>string;roundDetails:ReactNode;details:ReactNode;role:(i:number,n:number)=>string;replace:(seat:number)=>void;busy:boolean;online:boolean};
-export function TableNotice({game,t}:{game:any;t:(s:string)=>string}){
+export function TableNotice({game,t,pending=false,restoring=false}:{game:any;t:(s:string)=>string;pending?:boolean;restoring?:boolean}){
  const previous=useRef<{code:string;version:number;log:string[];at:number}|null>(null);
  const [notice,setNotice]=useState({message:'',version:0});
  const message=notice.message;
+ const status=pending?'Waiting for confirmation of your last action.':restoring?'Restoring your room…':'';
  useEffect(()=>{
   const now=Date.now();const text=recentTableEvent(previous.current,game,now,document.visibilityState==='visible');
   const changedRoom=previous.current?.code!==game.code;
@@ -17,8 +18,8 @@ export function TableNotice({game,t}:{game:any;t:(s:string)=>string}){
  },[game.code,game.version,game.log]);
  useEffect(()=>{if(!notice.message)return;const timer=setTimeout(()=>setNotice(n=>({...n,message:''})),4500);return()=>clearTimeout(timer)},[notice]);
  useEffect(()=>{const reset=()=>{previous.current=null;setNotice({message:'',version:0})};document.addEventListener('visibilitychange',reset);return()=>document.removeEventListener('visibilitychange',reset)},[]);
- // The page's existing live region announces changes. This is its visual counterpart.
- return <div className="table-notification" aria-hidden="true"><span>{message?t(message):'\u00a0'}</span></div>;
+ // Move events use the existing page live region; delivery status is announced here.
+ return <div className="table-notification"><span aria-hidden="true">{status?t(status):message?t(message):'\u00a0'}</span><span className="sr-only" role="status" aria-atomic="true">{status?t(status):''}</span></div>;
 }
 export function TableTools({showRules,game:g,id,t,roundDetails,details,role,replace,busy,online}:Props){
  const dialog=useRef<HTMLDialogElement>(null),opener=useRef<HTMLElement|null>(null);
