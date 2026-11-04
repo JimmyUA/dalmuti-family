@@ -144,3 +144,7 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 @media(max-width:350px){.game-active .card{height:70px}.game-active .cards{min-height:87px}.game-active .card b{font-size:22px}.game-active .card span{font-size:23px}.game-active .card[data-rank="13"] small{font-size:6px}}
 .game-active .table-action{justify-content:space-between;padding:11px 15px;text-align:left;font-weight:650}.game-active .table-action>span{margin:0}.game-active .table-action>span:last-child{font-size:18px;font-weight:400;flex-shrink:0}
 @media(min-height:740px) and (max-width:600px){.game-active>header{height:56px;min-height:56px}.game-active .roomtop{min-height:18px;margin:2px 0 9px}.game-active .roomtop button{border:0;background:transparent;padding:0 3px}.game-active .roomtop button b{font-size:10px;letter-spacing:1px}.game-active .roomtop button::after{content:' ⧉';font-size:12px;margin-left:4px}.game-active .table-stage .mini-card{width:56px;height:83px;padding:6px}.game-active .table-stage .mini-card b{font-size:27px}.game-active .table-stage .mini-card span{font-size:25px}}
+/* Current-round ranks are primary game information, including the local seat. */
+.game-active .seat-rank{display:block;font-size:9px;line-height:1.25;color:#52634e;margin-top:2px;white-space:normal;overflow-wrap:anywhere}
+.game-active .hand-rank{font-weight:600;color:#52634e}.game-active .handtop b{min-width:0;line-height:1.5}
+@media(max-width:350px){.game-active .seats:has(.seat:nth-child(5)) .seat-rank{font-size:8px;line-height:10px;margin-top:1px}}
