@@ -3,6 +3,10 @@ import { reliabilityDictionary } from './reliability-translations';
 import {nl,nlDynamic} from './dutch';
 export type Language = "en" | "uk" | "nl";
 const uk:Record<string,string>={
+"Scores":"Рахунок",
+"Round wins":"Перемоги в раундах",
+"Total points across rounds. Updated when a round finishes.":"Загальна кількість очок за всі раунди. Оновлюється після завершення раунду.",
+
 "Clear":"Очистити",
 "Select a matching set.":"Оберіть набір карт.",
 "No matching set. You can pass.":"Немає потрібного набору. Можна пропустити хід.",

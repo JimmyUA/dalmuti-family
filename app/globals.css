@@ -148,3 +148,4 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .game-active .seat-rank{display:block;font-size:9px;line-height:1.25;color:#52634e;margin-top:2px;white-space:normal;overflow-wrap:anywhere}
 .game-active .hand-rank{font-weight:600;color:#52634e}.game-active .handtop b{min-width:0;line-height:1.5}
 @media(max-width:350px){.game-active .seats:has(.seat:nth-child(5)) .seat-rank{font-size:8px;line-height:10px;margin-top:1px}}
+.felt-round-tools{gap:6px;align-items:flex-start;flex-wrap:wrap}.felt-round-tools .score-chip{white-space:nowrap;flex-shrink:0}.cumulative-scores .score{gap:14px}.cumulative-scores .score>span{min-width:0;overflow-wrap:anywhere}.cumulative-scores .score>b{flex-shrink:0}

@@ -46,3 +46,7 @@ The pending-action confirmation message now uses the reserved on-table notificat
 ### Card and visual finish
 
 Numbered cards use the prototype’s rank-and-symbol face. Full localized card names remain in `aria-label` and `title`; only the Jester keeps a small visible label, constrained to one line. Card contents are bounded and cannot spill into the hint/action row. Unfocused outlined buttons explicitly reset the conflicting Tailwind outline utility while retaining keyboard `:focus-visible` styling. Tall-phone spacing and pile sizes were compared with the reviewed prototype in adjacent 390×844 frames using the same seven-card hand. A fresh-trick state, 13/22-card hands and all three languages must remain in visual review.
+
+### Cumulative score access
+
+A Scores chip sits beside the round-status chip on the felt. It opens a native panel with total points and round wins for every player, sorted by total points; scores update from the authoritative snapshot when a round finishes. It remains available during play and on the results screen. The 320×640 eight-player browser check confirmed the chip fits without horizontal overflow, the action remains at 632px, and all eight players appear in the panel.
