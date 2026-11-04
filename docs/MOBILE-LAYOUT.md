@@ -2,7 +2,7 @@
 
 ## Behaviour
 
-- The game uses a compact viewport workspace after the lobby. All 4–8 seats remain visible with card counts and active-player styling. Full names, ranks, presence, replacement controls and finish order are available in Players.
+- The game uses a compact viewport workspace after the lobby. All opponent seats remain visible with card counts and active-player styling; the current player’s count stays beside the hand. Full names, ranks, presence, replacement controls and finish order are available in Players.
 - The hand is a single horizontally scrolling region. Cards keep a readable size instead of shrinking with hand size; keyboard focus can bring off-screen selectable cards into view.
 - Play/Pass, tax submission and revolution decisions sit beside the hand. Table content can scroll independently for long explanations, large piles and results.
 - History, round information, player details, rules and the table menu use native modal dialogs with Escape, close controls and focus restoration. History is frozen while reading; Show new moves explicitly refreshes it.
@@ -32,3 +32,9 @@ Browser checks performed with the review harness:
 Automated checks: `node tests/strategy.mjs`, `node tests/table-events.mjs`, `node tests/reliability.mjs`, production build, `node tests/production.mjs`, and `node tests/recovery.mjs`.
 
 These checks do not replace a real-device staging playtest. Still check Android/iOS browser bars and safe areas, screen readers, 200% browser zoom and native fullscreen support. No backend schema, move validation, room lifetime, recovery safeguards or production release gates are changed.
+
+## Prototype parity correction
+
+The initial integration preserved functionality but added an extra toolbar and used an auto margin that pushed the played set to the bottom of a tall table. The correction groups the set, turn heading and instruction in a centred, independently scrolling stage; puts the round indicator on the felt and History beside the latest move; and places focus/menu icons in the header. The main row shows opponents only, while the current player's count stays beside the hand. All seats remain accessible from Players in the menu. Small screens still keep the large-hand scrolling and phase-action safeguards. Compare the 4-player Ukrainian and prototype-comparison fixtures as well as the 8-player stress cases.
+
+Follow-up browser verification: at 320×640 with eight seats and 20 cards, the action bottom is 632px and the stage is 161px tall with no internal scrolling for a normal pair. The document width is exactly 320px. At 430×900 in Ukrainian with four seats and a four-card pile, the action bottom is 892px and the set is centred in the stage. Menu → Players exposes all eight seats; History remains reachable on the felt after a move.

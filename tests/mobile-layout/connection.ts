@@ -4,7 +4,7 @@ const id='11111111-1111-4111-8111-111111111111';
 function fixture(){
  const q=new URLSearchParams(location.search),phase=q.get('phase')||'playing',n=Number(q.get('players')||8),count=Number(q.get('cards')||20);
  const hand=Array.from({length:count},(_,i)=>i<4?3:i<8?7:i<count-2?12:13);
- const players=Array.from({length:n},(_,i)=>({id:i?'seat-'+i:id,seat:i,name:i?'Alexandermatildalongname'+i:'You',hand:i?[]:hand,count:i?10:count,presence:'online',score:3,wins:1,bot:i>0}));
+ const players=Array.from({length:n},(_,i)=>({id:i?'seat-'+i:id,seat:i,name:i?(q.get('names')==='short'?['Matilda','Oliver','Anna'][i-1]||'Arthur':'Alexandermatildalongname'+i):'You',hand:i?[]:hand,count:i?10:count,presence:'online',score:3,wins:1,bot:i>0}));
  return {code:'ABCDEF',host:id,phase,round:3,version:1,players,turn:0,last:1,pile:Number(q.get('pile'))===14?[...Array(12).fill(12),13,13]:Array(Number(q.get('pile')||2)).fill(9),finished:phase==='results'?players.map(p=>p.id):[],tax:{},log:['Alexandermatildalongname7 played 2 × 9','Oliver passed','Matilda won the trick and leads'],revolution:phase==='revolution'?id:undefined,revolutionOutcome:phase==='revolution'?undefined:'greater'};
 }
 export function useGameConnection(){
