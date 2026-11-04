@@ -39,3 +39,7 @@ Different versions may be normal briefly while updates propagate. Persistent dis
 `node tests/strategy.mjs` checks strategic decisions, legal moves, full rounds, test-room permissions, scenario deck integrity and stale-response handling.
 
 These checks do not replace real-device testing. Automatic seat recovery and action idempotency are now covered by `node tests/reliability.mjs`. Host transfer and paced bot turns remain future lifecycle/gameplay work.
+
+## Compact table layout
+
+See [MOBILE-LAYOUT.md](MOBILE-LAYOUT.md) for the corner-case matrix and test-only visual review harness. Run `node tests/table-events.mjs` for notification ordering and reconnect suppression.
