@@ -47,6 +47,9 @@ jobs:
       - name: Enforce check-only CI and preserve recovery workflow
         run: node tests/pipeline-safety.mjs
 
+      - name: Test environment isolation and staging guards
+        run: node tests/deployment-isolation.mjs
+
       - name: Test game rules, strategy and reliability scenarios
         run: |
           node tests/strategy.mjs
