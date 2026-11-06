@@ -17,6 +17,8 @@ let m=mock();assert.match(await recoverProduction(env,m.fetch),/unchanged/);asse
 m=mock();let verified=false;assert.match(await recoverProduction({...env,RECOVERY_MODE:'restore'},m.fetch,async(url,sha)=>{assert.equal(sha,release);assert.match(url,/dalmuti-family/);verified=true;}),/Restored/);assert(verified);assert.equal(m.calls.filter(c=>c.options.method==='POST').length,1);
 for(const options of [{tag:'wrong'},{active:target}]){m=mock(options);await assert.rejects(recoverProduction({...env,RECOVERY_MODE:'restore'},m.fetch));assert(!m.calls.some(c=>c.options.method==='POST'));}
 m=mock();await assert.rejects(recoverProduction({...env,RECOVERY_MODE:'restore',DEPLOY_ENABLED:'true'},m.fetch),/Pause/);assert.equal(m.calls.length,0);
+m=mock();await assert.rejects(recoverProduction({...env,RECOVERY_MODE:'restore',PRODUCTION_RELEASES_ENABLED:'true'},m.fetch),/Pause approved production releases/);assert.equal(m.calls.length,0);
+m=mock();assert.match(await recoverProduction({...env,RECOVERY_MODE:'verify',PRODUCTION_RELEASES_ENABLED:'true'},m.fetch),/unchanged/);assert.equal(m.calls.filter(c=>c.options.method==='POST').length,0);
 m=mock();await assert.rejects(recoverProduction({...env,TARGET_VERSION:'invalid'},m.fetch));assert.equal(m.calls.length,0);
 m=mock({failWrite:true});await assert.rejects(recoverProduction({...env,RECOVERY_MODE:'restore'},m.fetch),/may be live/i);
 console.log('Passed: read-only rehearsal, release/version guards, deployment pause, explicit restore and post-restore verification.');
