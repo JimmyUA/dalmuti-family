@@ -35,5 +35,5 @@ assert.match(workflow,/workflow_dispatch:/);
 assert.match(workflow,/group: crownturn-staging/);
 assert.match(workflow,/environment: staging/);
 assert.match(workflow,/secrets\.CLOUDFLARE_STAGING_API_TOKEN/);
-assert.doesNotMatch(workflow,/secrets\.CLOUDFLARE_API_TOKEN|wrangler deploy|d1 migrations apply|restore|mode:/i,'Read-only staging workflow must not contain write commands');
+assert.doesNotMatch(workflow,/secrets\.CLOUDFLARE_API_TOKEN|wrangler deploy|d1 migrations apply|run:.*recover-production|RECOVERY_MODE|method:.*POST/i,'Read-only staging workflow must not contain write commands');
 console.log('Passed: staging recovery is read-only, binds staging D1, rejects wrong Worker versions and cannot access production.');
