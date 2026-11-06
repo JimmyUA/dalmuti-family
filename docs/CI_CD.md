@@ -1,6 +1,6 @@
 # Crownturn CI/CD Strategy & Implementation Plan
 
-> **Status:** Approved strategy; implementation not started.
+> **Status:** Approved strategy. Phase 0 and Phase 1 implemented; Phase 2 changes tracked in PR #10. Follow [Phase 2 runbook](PHASE_2.md) for current release procedures.
 >
 > **Agreed:** 2026-11-04  
 > **Repository:** `JimmyUA/dalmuti-family`  
