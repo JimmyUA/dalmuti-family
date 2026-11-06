@@ -1,4 +1,4 @@
-import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,appendFileSync} from 'node:fs';
 import {verifyBundle} from './release-bundle.mjs';
 
 const sha40=/^[a-f0-9]{40}$/i;
@@ -31,6 +31,6 @@ if(process.argv[1]?.endsWith('staging-proof.mjs')){
  if(mode==='record')proof=createProof({sha:process.argv[3],ciRunId:process.argv[4],stagingRunId:process.argv[5],deployLog:readFileSync(process.argv[6],'utf8')});
  else if(mode==='verify')proof=readProof(process.argv[3],process.argv[4]);
  else throw Error('Usage: staging-proof.mjs record <release-sha> <ci-run-id> <staging-run-id> <deployment-log> | verify <release-sha> <staging-run-id>');
- if(process.env.GITHUB_OUTPUT)import('node:fs').then(({appendFileSync})=>appendFileSync(process.env.GITHUB_OUTPUT,'ci_run_id='+proof.ciRunId+'\nartifact_sha256='+proof.artifactSha256+'\n'));
+ if(process.env.GITHUB_OUTPUT)appendFileSync(process.env.GITHUB_OUTPUT,'ci_run_id='+proof.ciRunId+'\nartifact_sha256='+proof.artifactSha256+'\n');
  console.log('Staging attestation '+mode+' verified: '+proof.releaseSha+' / '+proof.workerVersion);
 }
