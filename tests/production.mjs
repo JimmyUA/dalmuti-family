@@ -17,6 +17,24 @@ const health=await worker.fetch(new Request('https://game.test/api/health'),env)
 assert.equal(health.status,200);assert.equal((await health.json()).status,'ok');
 const rejected=await worker.fetch(new Request('https://game.test/api/game',{method:'POST',headers:{Origin:'https://other.test','Content-Type':'application/json'},body:'{}'}),env);
 assert.equal(rejected.status,403);assert.equal(assetCalls,1);
+
+// Staging routes all static assets through the Worker to add noindex headers.
+// Production requests without CROWNTURN_ENV must retain their existing responses.
+const stageEnv={...env,CROWNTURN_ENV:'staging'};
+for(const resource of ['/', '/en/how-to-play.html', '/share.png']){
+ const response=await worker.fetch(new Request('https://dalmuti-family-staging.example.workers.dev'+resource),stageEnv);
+ assert.equal(response.status,200);
+ assert.equal(response.headers.get('X-Robots-Tag'),'noindex, nofollow');
+ assert.equal(response.headers.get('X-Crownturn-Environment'),'staging');
+}
+const stagingHealth=await worker.fetch(new Request('https://dalmuti-family-staging.example.workers.dev/api/health'),stageEnv);
+assert.equal(stagingHealth.status,200);
+assert.equal(stagingHealth.headers.get('X-Crownturn-Environment'),'staging');
+assert.equal(stagingHealth.headers.get('X-Robots-Tag'),'noindex, nofollow');
+const productionGuide=await worker.fetch(new Request('https://crownturn.com/en/how-to-play.html'),env);
+assert.equal(productionGuide.headers.get('X-Crownturn-Environment'),null);
+assert.equal(productionGuide.headers.get('X-Robots-Tag'),null);
+console.log('Passed: staging isolation headers on all assets and health, without changing production responses.');
 console.log('Passed: static asset configuration, direct API routing, health and cross-site protection.');
 
 // Privacy is a static asset: no game session, database or rate-limit bindings needed.

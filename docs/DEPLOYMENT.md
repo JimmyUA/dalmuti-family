@@ -1,5 +1,7 @@
 # Cloudflare deployment (Phase 0 transition)
 
+> **Phase 1 staging bootstrap:** See [PHASE_1.md](PHASE_1.md) for isolated D1, staging-only GitHub credentials, manual staging workflow, and first release validation. The config generator now requires explicit `CROWNTURN_DEPLOY_TARGET=staging` or `production` — old bare manual commands must not be used.
+>
 > **Current safety mode after Phase 0 is merged:** GitHub Actions `.github/workflows/ci.yml` runs checks and builds only. It does **not** run remote D1 migrations or deploy Cloudflare Workers, even when `DEPLOY_ENABLED=true`. Dedicated staging and manually approved production release workflows are **not implemented yet**. See [Phase 0 handover](PHASE_0.md) and the [approved CI/CD plan, PR #7](https://github.com/JimmyUA/dalmuti-family/pull/7). Keep `DEPLOY_ENABLED=false` while transitioning; the current recovery workflow still uses that flag as an emergency pause guard.
 
 ## Legacy automatic deployment process (disabled by Phase 0)
