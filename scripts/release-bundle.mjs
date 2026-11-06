@@ -24,7 +24,7 @@ export function verifyBundle(expectedSha,expectedDigest=''){
  if(!list.length||!list.some(s=>s==='dist/server/index.js')||!list.some(s=>s==='dist/server/wrangler.json')||!list.some(s=>s==='dist/client/index.html'))throw Error('Release archive is missing application files');
  for(const item of list){
   const parts=item.split('/').filter(Boolean);
-  if(item.startsWith('/')||parts.includes('..')||parts[0]!=='dist'||!['client','server'].includes(parts[1]))throw Error('Release archive contains an unexpected path: '+item);
+  if(item.startsWith('/')||parts.includes('..')||parts[0]!=='dist'||(parts.length>1&&!['client','server'].includes(parts[1])))throw Error('Release archive contains an unexpected path: '+item);
  }
  return manifest;
 }
