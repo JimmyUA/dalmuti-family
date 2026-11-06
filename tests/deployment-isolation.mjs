@@ -58,6 +58,17 @@ try{
  assert(!run('staging',{CLOUDFLARE_STAGING_D1_DATABASE_ID:'not-a-uuid'}).success,'reject invalid DB');
 }finally{rmSync(dir,{recursive:true,force:true})}
 
+const stagingWorkflow=readFileSync('.github/workflows/staging.yml','utf8');
+assert.match(stagingWorkflow,/workflow_dispatch:/);
+assert.doesNotMatch(stagingWorkflow,/^\s+push:/m,'Phase 1 staging must be manual-only');
+assert.match(stagingWorkflow,/environment: staging/);
+assert.match(stagingWorkflow,/secrets\.CLOUDFLARE_STAGING_API_TOKEN/);
+assert.doesNotMatch(stagingWorkflow,/secrets\.CLOUDFLARE_API_TOKEN/,'never fall back to production token');
+assert.match(stagingWorkflow,/CROWNTURN_DEPLOY_TARGET: staging/);
+assert.match(stagingWorkflow,/migrations apply DB --remote --config dist\/server\/staging-deploy\.json/);
+assert.match(stagingWorkflow,/wrangler deploy --config dist\/server\/staging-deploy\.json/);
+assert.doesNotMatch(stagingWorkflow,/--config dist\/server\/github-deploy\.json/,'staging cannot deploy production config');
+
 const prodUrl='https://dalmuti-family.sergii-pryhodko.workers.dev';
 const stageUrl='https://dalmuti-family-staging.sergii-pryhodko.workers.dev';
 const log='Deployment complete:\n'+prodUrl+'\n'+stageUrl+'\n';
