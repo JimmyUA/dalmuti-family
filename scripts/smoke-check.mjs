@@ -28,8 +28,8 @@ export async function checkDeployment(url,release,fetcher=fetch,expectedEnvironm
  }
 }
 if(process.argv[1]?.endsWith('smoke-check.mjs')){
- const release=process.env.GITHUB_SHA;
- if(!/^[a-f0-9]{40}$/i.test(release||''))throw Error('GITHUB_SHA is required');
+ const release=process.env.CROWNTURN_RELEASE_SHA||process.env.GITHUB_SHA;
+ if(!/^[a-f0-9]{40}$/i.test(release||''))throw Error('CROWNTURN_RELEASE_SHA or GITHUB_SHA is required');
  const target=process.argv[3]||'production';
  if(!Object.hasOwn(workers,target))throw Error('Choose production or staging smoke check.');
  const url=deploymentUrl(readFileSync(process.argv[2],'utf8'),workers[target]);

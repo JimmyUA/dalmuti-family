@@ -50,6 +50,9 @@ jobs:
       - name: Test environment isolation and staging guards
         run: node tests/deployment-isolation.mjs
 
+      - name: Test release provenance and promotion safeguards
+        run: node tests/release-pipeline.mjs
+
       - name: Test game rules, strategy and reliability scenarios
         run: |
           node tests/strategy.mjs
@@ -65,3 +68,18 @@ jobs:
         run: pnpm build:production
       - name: Test production Worker routing
         run: node tests/production.mjs
+
+      - name: Package immutable application artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: node scripts/release-bundle.mjs pack "$GITHUB_SHA"
+
+      - name: Upload tested commit artifact for staging and production
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: crownturn-build
+          path: |
+            release/crownturn-build.tar.gz
+            release/manifest.json
+          retention-days: 30
+          if-no-files-found: error

@@ -6,6 +6,7 @@ export async function recoverProduction(env,fetcher=fetch,verify=checkDeployment
  if(!/^[a-f0-9]{32}$/i.test(account||'')||!token||!uuid.test(target||'')||!uuid.test(current||'')||! /^[a-f0-9]{40}$/i.test(release||''))throw Error('Account, token, current/target version UUIDs and full release SHA are required.');
  if(!['verify','restore'].includes(env.RECOVERY_MODE))throw Error('Choose verify or restore.');
  if(env.RECOVERY_MODE==='restore'&&env.DEPLOY_ENABLED!=='false')throw Error('Pause automatic deployment: set DEPLOY_ENABLED=false first.');
+ if(env.RECOVERY_MODE==='restore'&&env.PRODUCTION_RELEASES_ENABLED==='true')throw Error('Pause approved production releases: set PRODUCTION_RELEASES_ENABLED=false before restore.');
  const base=`https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/dalmuti-family`;
  async function api(path,body){
   const response=await fetcher(base+path,{method:body?'POST':'GET',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000)});

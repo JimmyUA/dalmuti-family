@@ -1,13 +1,13 @@
 # Crownturn CI/CD Strategy & Implementation Plan
 
-> **Status:** Approved strategy; implementation not started.
+> **Status:** Approved strategy. Phase 0 and Phase 1 implemented; Phase 2 changes tracked in PR #10. Follow [Phase 2 runbook](PHASE_2.md) for current release procedures.
 >
 > **Agreed:** 2026-11-04  
 > **Repository:** `JimmyUA/dalmuti-family`  
 > **Production:** https://crownturn.com/  
 > **Scope:** GitHub Actions, Cloudflare Workers, Cloudflare D1, testing, releases, recovery.
 >
-> **IMPORTANT — transition safety:** The current `.github/workflows/ci.yml` still deploys to production on a passing `main` push while `DEPLOY_ENABLED=true`. **Even merging a documentation-only pull request can trigger a production deployment.** Before merging this plan or other changes into `main`, confirm `DEPLOY_ENABLED=false` and that running/queued deployments have completed. Do not interpret creating this file as implementing the strategy.
+> **Current safety posture:** Normal `Game CI` has not deployed production since Phase 0. Phase 2 introduces automatic isolated staging and an explicitly enabled, reviewed **manual** production release. Production recovery remains separate. Keep `DEPLOY_ENABLED=false`, leave `PRODUCTION_RELEASES_ENABLED=false` until the `production` environment has required reviewers and an environment-only release credential, and see [PHASE_2.md](PHASE_2.md).
 
 ## 1. Goals and agreed decisions
 

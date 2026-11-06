@@ -1,6 +1,6 @@
 # Phase 1 — isolated staging environment
 
-**Status:** Setup instructions and implementation. Phase 1 is not complete until a staging D1, staging credentials, and the first staging Worker deployment have been verified.
+**Status:** Initial staging Worker and isolated staging D1 deployed successfully on 2026-11-06 (Actions [run 42234523744](https://github.com/JimmyUA/dalmuti-family/actions/runs/42234523744)); baseline health and smoke checks passed. Phase 2 replaces manual bootstrap with automatic staging after successful main CI. See [PHASE_2.md](PHASE_2.md) for the current workflow.
 **Related:** [CI/CD strategy and implementation plan (PR #7)](https://github.com/JimmyUA/dalmuti-family/pull/7), [Phase 0 runbook](PHASE_0.md), [Production recovery](RECOVERY.md).
 
 ## Goal and safety contract

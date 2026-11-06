@@ -1,11 +1,22 @@
-name: Staging deployment (manual bootstrap)
+name: Staging deployment
 
-# Phase 1: opt-in bootstrap only. Phase 2 will wire successful main CI to staging.
+# Only a successful, trusted CI *push to main* can automatically deploy staging.
+# Manual reruns require the run ID of an already successful main CI run.
 on:
+  workflow_run:
+    workflows: [Game CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful Game CI main-push run ID to redeploy (must match current main)
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: crownturn-staging
@@ -13,14 +24,22 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main'
-    name: Deploy isolated staging Worker + D1
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    name: Promote successful CI artifact to staging
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: staging
     env:
       CI: true
       WRANGLER_SEND_METRICS: false
+      CI_RUN_ID: ${{ github.event.workflow_run.id || inputs.ci_run_id }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CROWNTURN_DEPLOY_TARGET: staging
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
@@ -29,45 +48,80 @@ jobs:
       ROOM_IDLE_TTL_HOURS: ${{ vars.ROOM_IDLE_TTL_HOURS }}
       ROOM_ACTIVE_TTL_HOURS: ${{ vars.ROOM_ACTIVE_TTL_HOURS }}
     steps:
-      - name: Checkout validated main commit
+      - name: Checkout repository deployment tooling
         uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Setup Node.js
+
+      - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - name: Setup pinned pnpm
+
+      - name: Verify CI success, main provenance and current main SHA
+        id: preflight
+        run: node scripts/verify-gh-run.mjs ci "$CI_RUN_ID" current
+
+      - name: Use validated source SHA for all deployment checks
+        env:
+          VALIDATED_SHA: ${{ steps.preflight.outputs.release_sha }}
+        run: echo "CROWNTURN_RELEASE_SHA=$VALIDATED_SHA" >> "$GITHUB_ENV"
+
+      - name: Download exact tested CI build
+        uses: actions/download-artifact@v4
+        with:
+          name: crownturn-build
+          run-id: ${{ steps.preflight.outputs.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: release
+
+      - name: Verify artifact manifest, digest and extract tested bytes
+        run: node scripts/release-bundle.mjs extract "$CROWNTURN_RELEASE_SHA"
+
+      - name: Set up pinned pnpm
         uses: pnpm/action-setup@v6
         with:
           run_install: false
           cache: true
-      - name: Install locked dependencies
+
+      - name: Install locked dependencies (Wrangler only; no rebuild)
         run: pnpm install --frozen-lockfile
-      - name: Verify staging secret and binding configuration
-        run: |
-          set -euo pipefail
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Configure CLOUDFLARE_STAGING_API_TOKEN in the staging GitHub environment."; exit 1; }
-          test -n "$CLOUDFLARE_STAGING_D1_DATABASE_ID" || { echo "::error::Configure CLOUDFLARE_STAGING_D1_DATABASE_ID in the staging GitHub environment."; exit 1; }
-          test -n "$CLOUDFLARE_D1_DATABASE_ID" || { echo "::error::Production D1 UUID is required for safety comparison."; exit 1; }
-      - name: Run CI, isolation and recovery tests
+
+      - name: Verify Worker routing and staging safety
         run: |
           node tests/pipeline-safety.mjs
           node tests/deployment-isolation.mjs
-          node tests/strategy.mjs
-          node tests/table-events.mjs
-          node tests/reliability.mjs
-          node tests/recovery.mjs
-      - name: Build release
-        run: pnpm build:production
-      - name: Verify production Worker routing
-        run: node tests/production.mjs
-      - name: Prepare staging-only deployment
-        run: node scripts/prepare-cloudflare-deploy.mjs
-      - name: Apply migrations ONLY to staging D1
-        run: pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/staging-deploy.json
-      - name: Deploy staging Worker and verify
+          node tests/production.mjs
+
+      - name: Validate staging token and database configuration
         run: |
           set -euo pipefail
-          pnpm exec wrangler deploy --config dist/server/staging-deploy.json --tag "$GITHUB_SHA" | tee /tmp/crownturn-staging-deploy.log
-          node scripts/smoke-check.mjs /tmp/crownturn-staging-deploy.log staging
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing staging Cloudflare secret."; exit 1; }
+          test -n "$CLOUDFLARE_STAGING_D1_DATABASE_ID" || { echo "::error::Missing staging D1 UUID."; exit 1; }
+          test -n "$CLOUDFLARE_D1_DATABASE_ID" || { echo "::error::Missing production D1 UUID for isolation check."; exit 1; }
+
+      - name: Prepare staging-only bindings
+        run: node scripts/prepare-cloudflare-deploy.mjs
+
+      - name: Revalidate selected CI SHA is still the tip of main
+        run: node scripts/verify-gh-run.mjs ci "$CI_RUN_ID" current
+
+      - name: Apply migrations ONLY to staging D1
+        run: pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/staging-deploy.json
+
+      - name: Deploy immutable application artifact and verify staging
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler deploy --config dist/server/staging-deploy.json --tag "$CROWNTURN_RELEASE_SHA" | tee /tmp/crownturn-staging-deploy.log
+          node scripts/smoke-check.mjs /tmp/crownturn-staging-deploy.log staging | tee -a /tmp/crownturn-staging-deploy.log
+
+      - name: Record attested staging version and artifact digest
+        run: node scripts/staging-proof.mjs record "$CROWNTURN_RELEASE_SHA" "$CI_RUN_ID" "$GITHUB_RUN_ID" /tmp/crownturn-staging-deploy.log
+
+      - name: Upload release eligibility proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-proof
+          path: proof/staging.json
+          retention-days: 30
+          if-no-files-found: error
