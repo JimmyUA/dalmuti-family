@@ -65,7 +65,7 @@ try{
  await dialog.waitFor();
  await wait(hostPage,'.cumulative-scores .score',8);
  await dialog.getByRole('button',{name:'Close panel'}).click();
- await hostPage.locator('.round-chip').click();
+ await hostPage.locator('button.round-chip:not(.score-chip)').click();
  assert(await dialog.getByText(/ROUND 1/i).count(),'Round information dialog unavailable');
  await dialog.getByRole('button',{name:'Close panel'}).click();
  await hostPage.reload({waitUntil:'domcontentloaded'});
