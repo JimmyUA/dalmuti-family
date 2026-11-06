@@ -1,6 +1,6 @@
 # Cloudflare deployment (Phase 0 transition)
 
-> **Current safety mode after Phase 0 is merged:** GitHub Actions `.github/workflows/ci.yml` runs checks and builds only. It does **not** run remote D1 migrations or deploy Cloudflare Workers, even when `DEPLOY_ENABLED=true`. Dedicated staging and manually approved production release workflows are **not implemented yet**. See [Phase 0 handover](PHASE_0.md) and the [approved CI/CD implementation plan](CI_CD.md) (the latter is tracked in a separate documentation PR until merged). Keep `DEPLOY_ENABLED=false` while transitioning; the current recovery workflow still uses that flag as an emergency pause guard.
+> **Current safety mode after Phase 0 is merged:** GitHub Actions `.github/workflows/ci.yml` runs checks and builds only. It does **not** run remote D1 migrations or deploy Cloudflare Workers, even when `DEPLOY_ENABLED=true`. Dedicated staging and manually approved production release workflows are **not implemented yet**. See [Phase 0 handover](PHASE_0.md) and the [approved CI/CD plan, PR #7](https://github.com/JimmyUA/dalmuti-family/pull/7). Keep `DEPLOY_ENABLED=false` while transitioning; the current recovery workflow still uses that flag as an emergency pause guard.
 
 ## Legacy automatic deployment process (disabled by Phase 0)
 
