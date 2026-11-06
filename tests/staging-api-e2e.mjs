@@ -59,7 +59,8 @@ export async function runStagingApiE2E(origin=STAGING_ORIGIN,fetcher=fetch){
  assert.equal(resumed.code,code);
  assert.equal(resumed.round,1);
  assert.equal(resumed.players.length,8);
- assert(resumed.players.every(p=>p.id!==guest&&p.hand.length===0),'No cards from other players');
+ assert(resumed.players.every(p=>p.id===guest||p.hand.length===0),'No cards from other players');
+ assert(resumed.players.some(p=>p.id===guest&&p.hand.length>0),'Guest should see their own dealt cards');
  // Predictable test room: split Jesters, host has authority to continue to taxes.
  const accepted=await call(mut('accept',host,game));
  assert.equal(accepted.status,200,JSON.stringify(accepted.data));
