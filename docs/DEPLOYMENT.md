@@ -1,6 +1,10 @@
-# Deploy from GitHub to Cloudflare
+# Cloudflare deployment (Phase 0 transition)
 
-Every push to `main` runs tests and a production build. Once deployment is enabled, a passing main-branch build also applies pending D1 migrations and deploys to Cloudflare Workers. Pull requests run checks only. Manual runs deploy only when run on `main`.
+> **Current safety mode after Phase 0 is merged:** GitHub Actions `.github/workflows/ci.yml` runs checks and builds only. It does **not** run remote D1 migrations or deploy Cloudflare Workers, even when `DEPLOY_ENABLED=true`. Dedicated staging and manually approved production release workflows are **not implemented yet**. See [Phase 0 handover](PHASE_0.md) and the [approved CI/CD plan, PR #7](https://github.com/JimmyUA/dalmuti-family/pull/7). Keep `DEPLOY_ENABLED=false` while transitioning; the current recovery workflow still uses that flag as an emergency pause guard.
+
+## Legacy automatic deployment process (disabled by Phase 0)
+
+Before Phase 0, each successful push to `main` could apply pending production D1 migrations and deploy the Worker if `DEPLOY_ENABLED=true`. The following historical setup instructions are retained for reference, **not as an active release procedure**. Do not manually trigger the legacy deployment during the transition without an explicit, reviewed production-change decision.
 
 ## One-time setup
 
