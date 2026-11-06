@@ -58,6 +58,13 @@ jobs:
           node tests/strategy.mjs
           node tests/table-events.mjs
 
+      - name: Test legacy room compatibility and Phase 3 staging safeguards
+        run: |
+          node tests/room-compatibility.mjs
+          node tests/phase3-safety.mjs
+          node --check tests/staging-browser.mjs
+          node --check tests/staging-api-e2e.mjs
+
       - name: Test reconnects and retry-safe actions
         run: node tests/reliability.mjs
 
