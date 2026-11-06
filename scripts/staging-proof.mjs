@@ -7,7 +7,7 @@ const digits=/^[1-9]\d{0,17}$/;
 const proofFile='proof/staging.json';
 export function validateProof(proof,release,stageRun,manifest){
  if(proof?.format!==1||proof.releaseSha!==release||!sha40.test(release)||String(proof.stagingRunId)!==String(stageRun)||!digits.test(String(stageRun))||!digits.test(String(proof.ciRunId))||!uuid.test(proof.workerVersion||''))throw Error('Staging attestation identifies the wrong release or workflow run');
- if(proof.worker!=='dalmuti-family-staging'||proof.artifactSha256!==manifest.sha256)throw Error('Staging attestation has an unexpected Worker or artifact digest');
+ if(!/^[a-f0-9]{64}$/.test(proof.artifactSha256||'')||proof.worker!=='dalmuti-family-staging'||proof.artifactSha256!==manifest.sha256)throw Error('Staging attestation has an unexpected Worker or artifact digest');
  return proof;
 }
 export function createProof({sha,ciRunId,stagingRunId,deployLog}){
