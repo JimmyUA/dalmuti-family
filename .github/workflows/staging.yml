@@ -115,6 +115,31 @@ jobs:
           pnpm exec wrangler deploy --config dist/server/staging-deploy.json --tag "$CROWNTURN_RELEASE_SHA" | tee /tmp/crownturn-staging-deploy.log
           node scripts/smoke-check.mjs /tmp/crownturn-staging-deploy.log staging | tee -a /tmp/crownturn-staging-deploy.log
 
+      - name: Validate real eight-player game and persisted staging session
+        run: node tests/staging-api-e2e.mjs
+
+      - name: Install isolated pinned Chromium test runner
+        run: |
+          set -euo pipefail
+          BROWSER_TOOLS="$RUNNER_TEMP/crownturn-browser"
+          npm install --prefix "$BROWSER_TOOLS" --no-save --no-package-lock --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          "$BROWSER_TOOLS/node_modules/.bin/playwright" install --with-deps chromium
+          echo "CROWNTURN_PLAYWRIGHT_MODULE=$BROWSER_TOOLS/node_modules/playwright" >> "$GITHUB_ENV"
+
+      - name: Test two real mobile browsers, full eight-player table and reconnect
+        env:
+          CROWNTURN_E2E_SCREENSHOTS: ${{ runner.temp }}/crownturn-browser-evidence
+        run: node tests/staging-browser.mjs
+
+      - name: Upload staging browser diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-e2e-failure
+          path: ${{ runner.temp }}/crownturn-browser-evidence/
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Record attested staging version and artifact digest
         run: node scripts/staging-proof.mjs record "$CROWNTURN_RELEASE_SHA" "$CI_RUN_ID" "$GITHUB_RUN_ID" /tmp/crownturn-staging-deploy.log
 
