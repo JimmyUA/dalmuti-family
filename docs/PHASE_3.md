@@ -53,7 +53,7 @@ When changing the room schema, add a sanitized fixture representing the prior re
 
 1. Record the current staging Worker version UUID, the previous known-working staging version UUID and its full release tag from Cloudflare Deployments.
 2. Verify the target version remains available, is tagged with the expected full SHA, and can read the current staging D1 schema and room JSON. A Worker version restoration cannot undo D1 mutations.
-3. Use the manual staging recovery verification workflow (if available) in **verify** mode first; this makes no changes.
+3. Open [Staging recovery readiness (read only)](https://github.com/JimmyUA/dalmuti-family/actions/workflows/staging-recovery.yml), select `main`, enter the current staging Worker version UUID, the previous known-good version UUID and its full release SHA, then run. This workflow uses the **staging-only API token**, checks the active 100%-traffic version and target's tag/binding metadata, and makes only GET requests. It has no restore mode or D1 write capability. A successful result is a read-only rehearsal, not a live rollback.
 4. For a deliberate staging rollback rehearsal, coordinate a brief staging test interruption, pause staging deployments, restore the known-good version **only on staging**, then verify health and gameplay. Re-deploy the currently validated release afterward and repeat E2E checks so production promotion proof refers to the currently healthy staging version.
 5. For production, use [RECOVERY.md](RECOVERY.md). Recovery `verify` is read-only; a production `restore` is for incidents only and requires both deployment switches paused. Never do a routine rollback rehearsal against a live production game.
 
