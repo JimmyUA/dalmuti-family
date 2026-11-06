@@ -1,0 +1,186 @@
+name: Production release (manual approval)
+
+# Disabled until production reviewers, environment-only credentials and
+# PRODUCTION_RELEASES_ENABLED=true are explicitly configured.
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Full 40-character main CI SHA already verified on staging
+        required: true
+        type: string
+      staging_run_id:
+        description: Successful staging workflow run ID that deployed the exact SHA
+        required: true
+        type: string
+      confirmation:
+        description: Explicit release intent; choose RELEASE to continue
+        type: choice
+        options: [CANCEL, RELEASE]
+        default: CANCEL
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  preflight:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'RELEASE'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      ci_run_id: ${{ steps.proof.outputs.ci_run_id }}
+      artifact_sha256: ${{ steps.proof.outputs.artifact_sha256 }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+      RELEASE_ENABLED: ${{ vars.PRODUCTION_RELEASES_ENABLED }}
+      DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
+    steps:
+      - name: Ensure explicit production-release switch and legacy deployment pause
+        run: |
+          set -euo pipefail
+          test "$RELEASE_ENABLED" = "true" || { echo "::error::Set repository variable PRODUCTION_RELEASES_ENABLED=true only after configuring protected production environment."; exit 1; }
+          test "$DEPLOY_ENABLED" = "false" || { echo "::error::Legacy DEPLOY_ENABLED must remain false."; exit 1; }
+      - name: Checkout release orchestration code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Verify staging run succeeded on trusted main
+        run: node scripts/verify-gh-run.mjs staging "$STAGING_RUN_ID"
+      - name: Download staging release proof
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-proof
+          run-id: ${{ inputs.staging_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: proof
+      - name: Inspect staging attestation
+        id: proof
+        run: node scripts/staging-proof.mjs inspect "$RELEASE_SHA" "$STAGING_RUN_ID"
+      - name: Validate exact source CI run is successful and still main
+        env:
+          CI_RUN_ID: ${{ steps.proof.outputs.ci_run_id }}
+        run: node scripts/verify-gh-run.mjs ci "$CI_RUN_ID" current
+      - name: Download CI-built immutable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: crownturn-build
+          run-id: ${{ steps.proof.outputs.ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: release
+      - name: Verify identical SHA and digest were tested in staging
+        run: node scripts/staging-proof.mjs verify "$RELEASE_SHA" "$STAGING_RUN_ID"
+      - name: Confirm staging still serves this exact healthy SHA
+        run: node scripts/check-release-host.mjs staging "$RELEASE_SHA"
+
+  deploy:
+    needs: [preflight]
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'RELEASE'
+    name: Approved production promotion
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    # Configure required reviewers in GitHub Settings -> Environments -> production.
+    # Environment-only token prevents deployment until that setup is done.
+    environment: production
+    concurrency:
+      group: crownturn-production
+      cancel-in-progress: false
+    env:
+      CI: true
+      WRANGLER_SEND_METRICS: false
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      CROWNTURN_RELEASE_SHA: ${{ inputs.release_sha }}
+      STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+      CI_RUN_ID: ${{ needs.preflight.outputs.ci_run_id }}
+      APPROVED_DIGEST: ${{ needs.preflight.outputs.artifact_sha256 }}
+      RELEASE_ENABLED: ${{ vars.PRODUCTION_RELEASES_ENABLED }}
+      DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
+      CROWNTURN_DEPLOY_TARGET: production
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_D1_DATABASE_ID }}
+      CLOUDFLARE_STAGING_D1_DATABASE_ID: ${{ vars.CLOUDFLARE_STAGING_D1_DATABASE_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PRODUCTION_RELEASE_API_TOKEN }}
+      ROOM_IDLE_TTL_HOURS: ${{ vars.ROOM_IDLE_TTL_HOURS }}
+      ROOM_ACTIVE_TTL_HOURS: ${{ vars.ROOM_ACTIVE_TTL_HOURS }}
+    steps:
+      - name: Recheck release toggle and protected production-only secret
+        run: |
+          set -euo pipefail
+          test "$RELEASE_ENABLED" = "true" || { echo "::error::Production release is paused."; exit 1; }
+          test "$DEPLOY_ENABLED" = "false" || { echo "::error::Legacy production CI must remain paused."; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Missing production environment-only release token."; exit 1; }
+          test -n "$CLOUDFLARE_STAGING_D1_DATABASE_ID" || { echo "::error::Missing production environment variable for staging D1 isolation."; exit 1; }
+      - name: Checkout release orchestration and migration SQL
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Validate staging and original CI runs still trustworthy
+        run: |
+          node scripts/verify-gh-run.mjs staging "$STAGING_RUN_ID"
+          node scripts/verify-gh-run.mjs ci "$CI_RUN_ID" current
+      - name: Download staging attestation again after approval
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-proof
+          run-id: ${{ inputs.staging_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: proof
+      - name: Confirm staged artifact provenance remains the same
+        run: |
+          node scripts/staging-proof.mjs inspect "$RELEASE_SHA" "$STAGING_RUN_ID"
+          test "$APPROVED_DIGEST" = "$(node -p "JSON.parse(require('fs').readFileSync('proof/staging.json','utf8')).artifactSha256")" || exit 1
+      - name: Download exactly the same CI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: crownturn-build
+          run-id: ${{ needs.preflight.outputs.ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: release
+      - name: Verify and extract approved application bytes (no rebuild)
+        run: |
+          node scripts/release-bundle.mjs extract "$RELEASE_SHA" "$APPROVED_DIGEST"
+          node scripts/staging-proof.mjs verify "$RELEASE_SHA" "$STAGING_RUN_ID"
+      - name: Setup pinned pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+          cache: true
+      - name: Install locked dependencies to run Wrangler
+        run: pnpm install --frozen-lockfile
+      - name: Reverify current staging and release identity
+        run: node scripts/check-release-host.mjs staging "$RELEASE_SHA"
+      - name: Prepare production-only bindings
+        run: node scripts/prepare-cloudflare-deploy.mjs
+      - name: Verify only backward-compatible migrations are pending
+        run: node scripts/check-release-migrations.mjs
+      - name: Recheck live staging before modifying D1
+        run: node scripts/check-release-host.mjs staging "$RELEASE_SHA"
+      - name: Apply approved additive migrations to PRODUCTION D1
+        run: pnpm exec wrangler d1 migrations apply DB --remote --config dist/server/github-deploy.json
+      - name: Deploy previously tested application bundle to PRODUCTION
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler deploy --config dist/server/github-deploy.json --tag "$RELEASE_SHA" | tee /tmp/crownturn-production-release.log
+          node scripts/smoke-check.mjs /tmp/crownturn-production-release.log production
+          node scripts/check-release-host.mjs production "$RELEASE_SHA"
+          {
+            echo "### Production release"
+            echo "- Commit: \`$RELEASE_SHA\`"
+            echo "- Original CI run: $CI_RUN_ID"
+            echo "- Successful staging run: $STAGING_RUN_ID"
+            echo "- Artifact sha256: \`$APPROVED_DIGEST\`"
+            echo "- Cloudflare Worker version: $(grep 'Current Version ID:' /tmp/crownturn-production-release.log | tail -1)"
+            echo "- Production hostname checked: https://crownturn.com/"
+          } >> "$GITHUB_STEP_SUMMARY"
