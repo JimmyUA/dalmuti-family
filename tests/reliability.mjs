@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dalmuti-reliability-'));
 const databases = [];
 try {
-  for (const file of ['expiry','strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security','monitoring','health']) {
+  for (const file of ['expiry','strategy', 'game', 'client-state', 'game-service', 'connection','lifecycle','request-validation','security','monitoring','growth','health']) {
     const source = fs.readFileSync('app/' + file + '.ts', 'utf8');
     const output = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } }).outputText
       .replace(/from '(\.\/[^']+)'/g, "from '$1.mjs'");
