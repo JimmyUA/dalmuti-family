@@ -13,7 +13,7 @@ assert(!('lastProgressAt' in original));
 assert(!('receipts' in original));
 const sql=new DatabaseSync(':memory:');
 try{
- for(const file of ['expiry','strategy','game','game-service','lifecycle','request-validation','monitoring']){
+ for(const file of ['expiry','strategy','game','game-service','lifecycle','request-validation','monitoring','growth']){
   const source=readFileSync('app/'+file+'.ts','utf8');
   const output=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText
    .replace(/from '(\.\/[^']+)'/g,"from '$1.mjs'");
