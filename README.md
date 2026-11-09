@@ -9,6 +9,7 @@ Live game: https://dalmuti-family.sergii-pryhodko.workers.dev/
 ## Planning
 
 - [Product backlog](docs/PRODUCT_BACKLOG.md): growth-loop features and deferred UX improvements.
+- [Growth analytics](docs/GROWTH_ANALYTICS.md): privacy-safe event contract, data retention and reporting queries.
 - [CI/CD strategy](docs/CI_CD.md): staging, controlled releases and recovery.
 
 ## Development
