@@ -57,9 +57,9 @@ try {
   assert.equal(replay.status,200);
   assert.equal(count('room_created'),1,'a retried create must not count twice');
   const code=first.data.code;
-  const join={type:'join',id:guest,name:'Guest private name',requestId:crypto.randomUUID(),code};
-  assert.equal((await call(join)).status,200);
-  assert.equal((await call(join)).status,200);
+  const joinRequest={type:'join',id:guest,name:'Guest private name',requestId:crypto.randomUUID(),code};
+  assert.equal((await call(joinRequest)).status,200);
+  assert.equal((await call(joinRequest)).status,200);
   assert.equal(count('human_joined'),1,'joining the same session is not another new human');
   let game=(await call({type:'poll',id:host,code})).data;
   for(let i=0;i<2;i++){
