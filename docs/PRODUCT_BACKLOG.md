@@ -32,6 +32,8 @@ Track eligible events without storing players' names, personal messages, raw roo
 ## Priority P0 — make invitations and the first game frictionless
 
 ### GROW-01 · Privacy-safe group activation funnel
+
+Implementation is proposed in [the growth analytics design](GROWTH_ANALYTICS.md); this item is complete only after checks and staging validation, not merely a PR merge.
 - [ ] Define event contract and metrics for: landing, practice started, room created, invite action, invite landing, human join, multiplayer game completed, repeat multiplayer group/room.
 - [ ] Add lightweight event collection or aggregation with opt-in/consent handling wherever required; do not transmit player names, room codes, card holdings, raw URLs with room identifiers, or session credentials.
 - [ ] Document event definitions, bot vs human counting, source attribution (e.g. invite vs community), and a simple dashboard/query.
