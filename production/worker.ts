@@ -1,12 +1,13 @@
 import {cleanupRooms} from '../app/expiry';
 import {secureGameRequest,type SecurityEnv} from '../app/security';
 import {health} from '../app/health';
+import {growthRequest,pruneGrowth} from '../app/growth';
 type Env=SecurityEnv&{
  ASSETS:{fetch(request:Request):Promise<Response>};
  CROWNTURN_ENV?:'production'|'staging';
 };
 export default {
- async scheduled(_event:unknown,env:Env){const deleted=await cleanupRooms(env.DB,env);console.log(JSON.stringify({event:"room_cleanup",deleted}));},
+ async scheduled(_event:unknown,env:Env){const deleted=await cleanupRooms(env.DB,env);await pruneGrowth(env.DB);console.log(JSON.stringify({event:"room_cleanup",deleted}));},
  async fetch(request:Request,env:Env):Promise<Response>{
   const url=new URL(request.url),path=url.pathname;
   // Staging runs the Worker before all assets and marks every response noindex.
@@ -28,6 +29,7 @@ export default {
    return finish(asset);
   }
   if(path==='/api/game')return finish(request.method==='POST'?await secureGameRequest(request,env):new Response('Method not allowed',{status:405,headers:{Allow:'POST'}}));
+  if(path==='/api/growth')return finish(request.method==='POST'?await growthRequest(request,env):new Response('Method not allowed',{status:405,headers:{Allow:'POST'}}));
   if(path==='/api/health')return finish(request.method==='GET'?await health(env):new Response('Method not allowed',{status:405,headers:{Allow:'GET'}}));
   if(path.startsWith('/api/'))return finish(new Response('Not found',{status:404}));
   return finish(await env.ASSETS.fetch(request));
