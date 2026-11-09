@@ -48,24 +48,17 @@ GROUP BY day, event, source
 ORDER BY day DESC, event, source;
 ```
 
-Current **UTC calendar-week** active multiplayer rooms (Monday through Sunday):
+Current **UTC calendar-week** active multiplayer rooms (Monday through Sunday, always calculated in UTC):
 
 ```sql
-SELECT COALESCE(SUM(total), 0) AS weekly_active_rooms
-FROM growth_daily
-WHERE event = 'weekly_active_room'
-  AND day >= date('now', 'weekday 1', '-7 days')
-  AND day < date('now', 'weekday 1');
-```
-
-**Important:** The SQL above uses SQLite's `weekday 1` modifier, which identifies the *next* Monday even if today is Monday; for an always-current Monday-to-Sunday range use the following parameterized pattern instead: calculate Monday's UTC date outside the query (for example, `2026-11-09`) and replace the dates below.
-
-```sql
-SELECT COALESCE(SUM(total), 0) AS weekly_active_rooms
-FROM growth_daily
-WHERE event = 'weekly_active_room'
-  AND day >= '2026-11-09'
-  AND day < '2026-11-16';
+WITH week AS (
+  SELECT date('now', '-' || ((CAST(strftime('%w','now') AS INTEGER) + 6) % 7) || ' days') AS monday
+)
+SELECT COALESCE(SUM(g.total), 0) AS weekly_active_rooms
+FROM growth_daily AS g, week
+WHERE g.event = 'weekly_active_room'
+  AND g.day >= week.monday
+  AND g.day < date(week.monday, '+7 days');
 ```
 
 Compare major funnel stages over the same 7-day window:
