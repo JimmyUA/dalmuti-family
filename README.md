@@ -6,6 +6,11 @@ A mobile-friendly multiplayer family card game for 4–8 players, including comp
 
 Live game: https://dalmuti-family.sergii-pryhodko.workers.dev/
 
+## Planning
+
+- [Product backlog](docs/PRODUCT_BACKLOG.md): growth-loop features and deferred UX improvements.
+- [CI/CD strategy](docs/CI_CD.md): staging, controlled releases and recovery.
+
 ## Development
 
 Requires Node.js 22.13+ and pnpm (see package.json for the pinned version).
