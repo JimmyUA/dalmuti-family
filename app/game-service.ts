@@ -1,12 +1,13 @@
 import {chooseMove,legalSets} from './strategy';
 import {expired,expiryPolicy,type ExpiryPolicy} from './expiry';
 import {monitoringSnapshot} from './monitoring';
+import {completionGrowthEvents,recordGrowth,recordGrowthBatch} from './growth';
 import {validateRequest} from './request-validation';
 import {status,transferHost,lifecycleAction,type Presence} from './lifecycle';
 import { action, computerActor, computerStep, view, addComputer, setTestScenario, type Game } from './game';
 
 type Receipt = { player: string; fingerprint: string; version: number };
-type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number;computerDueAt?:number;skipComputerWait?:boolean };
+type StoredGame = Game & { receipts?: Record<string, Receipt>; creationKey?: string;lastProgressAt?:number;computerDueAt?:number;skipComputerWait?:boolean;growthWeekStart?:string;growthLastCompletionAt?:number };
 type Row = { state: string; version: number; last_activity:number };
 type Statement = { bind(...args: any[]): Statement; first<T>(): Promise<T | null>; run(): Promise<{ meta: { changes?: number } }> };
 export type Database = { prepare(sql: string): Statement };
@@ -41,7 +42,7 @@ function scheduleComputer(game:StoredGame,now:number){
 }
 const response = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const publicView = (game: StoredGame, id: string, version: number, presence:Presence={}, now=Date.now()) => {
-  const { receipts, creationKey,lastProgressAt,computerDueAt,skipComputerWait, ...safe } = game;
+  const { receipts, creationKey,lastProgressAt,computerDueAt,skipComputerWait,growthWeekStart,growthLastCompletionAt, ...safe } = game;
   const result=view(safe,id,version);const snapshot={...result,players:result.players.map((p,i)=>({...p,seat:i,presence:status(safe,safe.players[i].id,presence,now)}))};return {...snapshot,canSkipComputers:canSkipComputers(safe)&&safe.finished.includes(id)&&!safe.players.find(p=>p.id===id)?.bot&&!skipComputerWait,skippingComputers:!!skipComputerWait,computerThinking:!!computerActor(safe)?.bot,computerWaitMs:computerActor(safe)?.bot&&computerDueAt!==undefined?Math.max(0,computerDueAt-now):undefined,...monitoringSnapshot(snapshot,lastProgressAt??now,now)};
 };
 async function digest(value: string) {
@@ -87,12 +88,13 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       lastProgressAt:now,creationKey, receipts: { [request.requestId!]: { player: request.id, fingerprint, version: 0 } },
     };
     if (request.practice) for (let i = 0; i < 3; i++) addComputer(game);
-    await db.prepare('INSERT INTO rooms (code,state,version,last_activity) VALUES (?,?,0,?) ON CONFLICT(code) DO NOTHING').bind(code, JSON.stringify(game),now).run();
+    const inserted = await db.prepare('INSERT INTO rooms (code,state,version,last_activity) VALUES (?,?,0,?) ON CONFLICT(code) DO NOTHING').bind(code, JSON.stringify(game),now).run();
     const row = await read(db, code);
     if (!row) return response({ error: 'Could not connect.' }, 503);
     const stored: StoredGame = JSON.parse(row.state);
     if(expired(stored.phase,row.last_activity,now,policy))return response({error:'This room has expired. Please create a new table.'},404);
     if (stored.creationKey !== creationKey) return response({ error: 'Room code collision. Please create a new room.' }, 409);
+    if (inserted.meta.changes && !stored.testMode) await recordGrowth(db,request.practice?'practice_started':'room_created',now);
     const result = replay(stored, request, fingerprint, row.version);
     // Even after receipt pruning, the creation identity prevents creating a second room.
     return result || response({ ...publicView(stored, request.id, row.version), acknowledgedRequestId: request.requestId });
@@ -120,13 +122,15 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     }
     if (request.type === 'poll') {
       if(computerActor(game)?.bot){
+        const previousPhase=game.phase;
         // Legacy rooms acquire a deadline before their first paced move.
         if(game.skipComputerWait&&canSkipComputers(game))skipComputerBatch(game,now);
         else if(game.computerDueAt===undefined)scheduleComputer(game,now);
         else if(now>=game.computerDueAt){computerStep(game);game.lastProgressAt=now;scheduleComputer(game,now)}
         else return response(publicView(game,request.id,row.version,presence,now));
+        const growthEvents=completionGrowthEvents(game,previousPhase,now);
         const changed=await db.prepare('UPDATE rooms SET state=?,version=version+1 WHERE code=? AND version=?').bind(JSON.stringify(game),code,row.version).run();
-        if(changed.meta.changes)return response(publicView(game,request.id,row.version+1,presence,now));
+        if(changed.meta.changes){await recordGrowthBatch(db,growthEvents,now);return response(publicView(game,request.id,row.version+1,presence,now));}
         continue;
       }
       return member ? response(publicView(game, request.id, row.version,presence,now)) : response({ error: 'Join this room first.' }, 403);
@@ -146,6 +150,7 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
         return response({ error: 'The game changed. Review the table and try again.', snapshot: publicView(game, request.id, row.version,presence,now) }, 409);
       }
     }
+    const previousPhase=game.phase;
     try {
       if (request.type === 'join') {
         if (!member) {
@@ -167,6 +172,7 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
       return response({ error: error.message || 'Unknown action.', snapshot: member ? publicView(JSON.parse(row.state), request.id, row.version) : undefined }, 400);
     }
     if(!['join','leave-room'].includes(request.type))game.lastProgressAt=now;
+    const growthEvents=completionGrowthEvents(game,previousPhase,now);
     game.receipts ??= {};
     game.receipts[request.requestId!] = { player: request.id, fingerprint, version: row.version + 1 };
     const entries = Object.entries(game.receipts);
@@ -174,7 +180,11 @@ export async function handleGameRequest(db: Database, request: GameRequest, now=
     // State and acknowledgement are one atomic compare-and-swap SQL statement.
     const result = await db.prepare('UPDATE rooms SET state=?,version=version+1,last_activity=MAX(last_activity,?) WHERE code=? AND version=?')
       .bind(JSON.stringify(game), now, code, row.version).run();
-    if (result.meta.changes) return response({ ...publicView(game, request.id, row.version + 1,presence,now), departed:request.type==='leave-room',acknowledgedRequestId: request.requestId });
+    if (result.meta.changes){
+      if(request.type==='join'&&!member&&!game.testMode)await recordGrowth(db,'human_joined',now);
+      await recordGrowthBatch(db,growthEvents,now);
+      return response({ ...publicView(game, request.id, row.version + 1,presence,now), departed:request.type==='leave-room',acknowledgedRequestId: request.requestId });
+    }
     // Reread after a concurrent write. A duplicate finds its receipt; another action finds a stale version.
   }
   return response({ error: 'Could not connect.' }, 503);
