@@ -35,6 +35,10 @@ The reliability suite covers malformed fields, oversized requests, invalid JSON,
 
 These safeguards do not replace platform-level DDoS protection, monitoring, dependency updates, or a browser security review. Never log request bodies or player-session tokens. Input protection does not make the game an account-based identity system.
 
+## Anonymous growth counters
+
+GROW-01 adds an allowlisted same-origin product-event endpoint at `/api/growth` with separate hashed-network rate-limit keys (using the existing CREATE_LIMIT binding), tiny JSON bodies, and no cookies or Referer. The game service records accepted room/join/completion milestones only after committed mutations; it writes UTC daily totals (event/source/count) without room or session identifiers and does not expose private completion markers. Records are deleted after 90 days. Analytics write errors are ignored so gameplay does not fail. See [GROWTH_ANALYTICS.md](GROWTH_ANALYTICS.md) for limitations and reporting.
+
 ## Player-facing privacy information
 
 The production build emits `/privacy.html` as a standalone static page from `scripts/privacy-page.mjs`. The game footer links to the current language in a separate tab. The notice covers server room/session/presence data, browser local storage, configurable expiry defaults, limited expired-room records, hosting metadata, diagnostics and clearing local data. It starts no game connection and works without local storage; without JavaScript, all three language versions remain readable. Review this notice whenever storage, logging, retention or hosting changes. It describes the current game behavior and does not claim that clearing local data deletes server data or hosting logs/backups.
