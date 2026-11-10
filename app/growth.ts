@@ -7,7 +7,7 @@ export type GrowthEvent =
   | 'room_created' | 'practice_started' | 'human_joined'
   | 'multiplayer_completed' | 'weekly_active_room' | 'return_room';
 export type GrowthSource = 'direct' | 'invite' | 'reddit' | 'linkedin' | 'community' | 'other' | 'server';
-export const CLIENT_EVENTS = ['landing_loaded', 'invite_landing', 'invite_copied'] as const;
+export const CLIENT_EVENTS = ['landing_loaded', 'invite_landing', 'invite_copied', 'invite_shared'] as const;
 export const CLIENT_SOURCES = ['direct', 'invite', 'reddit', 'linkedin', 'community', 'other'] as const;
 export type GrowthDatabase = {
   prepare(sql: string): { bind(...values: any[]): { run(): Promise<any> } };

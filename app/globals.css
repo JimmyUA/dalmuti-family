@@ -149,3 +149,31 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .game-active .hand-rank{font-weight:600;color:#52634e}.game-active .handtop b{min-width:0;line-height:1.5}
 @media(max-width:350px){.game-active .seats:has(.seat:nth-child(5)) .seat-rank{font-size:8px;line-height:10px;margin-top:1px}}
 .felt-round-tools{gap:6px;align-items:flex-start;flex-wrap:wrap}.felt-round-tools .score-chip{white-space:nowrap;flex-shrink:0}.cumulative-scores .score{gap:14px}.cumulative-scores .score>span{min-width:0;overflow-wrap:anywhere}.cumulative-scores .score>b{flex-shrink:0}
+
+/* GROW-02: invite actions remain accessible without covering the table or cards. */
+.invite-controls{min-width:0;max-width:100%}
+.invite-controls-row{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.invite-room-code{font-size:12px;color:#264b3c;white-space:nowrap}
+.invite-room-code b{letter-spacing:1px;font-size:13px}
+.invite-controls-row button{padding:9px 12px;min-height:38px;min-width:0;font-size:12px;line-height:1.25;white-space:nowrap}
+.invite-controls .invite-share{background:#214c3c;color:#fff8df}
+.invite-controls .invite-copy{gap:0}
+.invite-feedback,.invite-full-hint{margin:5px 0 0;color:#315843;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.invite-manual-link{max-width:320px;min-width:0;margin:5px 0 0;padding:10px 9px;font-size:12px;user-select:all}
+.lobby-invite-controls{align-self:center;max-width:100%;width:100%;margin:-3px 0 10px;text-align:center}
+.lobby-invite-controls .invite-controls-row{justify-content:center}
+.lobby-invite-controls .invite-feedback,.lobby-invite-controls .invite-full-hint{margin:5px auto 0}
+.lobby-invite-controls .invite-manual-link{margin:5px auto 0}
+.game-active .roomtop .invite-controls{margin-left:auto;text-align:right}
+.game-active .roomtop .invite-controls button{min-height:34px}
+@media(max-width:600px){
+  .game-active .roomtop .invite-controls-row{gap:5px;flex-wrap:wrap}
+  .game-active .roomtop .invite-room-code{font-size:10px}
+  .game-active .roomtop .invite-room-code b{font-size:11px}
+  .game-active .roomtop .invite-controls button{padding:7px 9px;min-height:32px;font-size:11px}
+  .lobby-invite-controls .invite-controls-row button{min-height:40px}
+}
+@media(max-width:480px){
+  .game-active .roomtop>div:first-child{display:none}
+  .game-active .roomtop{justify-content:flex-end}
+}

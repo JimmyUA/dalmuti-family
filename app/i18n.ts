@@ -187,6 +187,17 @@ Object.assign(uk,{
   "playing": "Гра",
   "results": "Результати"
 });
+Object.assign(uk,{
+  "Share": "Поділитися",
+  "Share invitation": "Поділитися запрошенням",
+  "Copy link": "Копіювати посилання",
+  "Copy invitation": "Копіювати запрошення",
+  "Sharing completed.": "Поширення завершено.",
+  "Invitation link copied!": "Посилання на запрошення скопійовано!",
+  "Automatic copying is unavailable. Select the link below and copy it manually.": "Не вдалося скопіювати автоматично. Виділіть посилання нижче та скопіюйте його вручну.",
+  "Invitation link to copy manually": "Посилання для ручного копіювання",
+  "All seats are taken. New players cannot join this table.": "Усі місця зайняті. Нові гравці не можуть приєднатися до цього столу.",
+});
 export const ukLabels=['','Монарх','Архієпископ','Маршал','Баронеса','Абатиса','Лицар','Швачка','Муляр','Кухар','Пастушка','Каменяр','Селянин','Блазень'];
 export function countLabel(n:number,lang:Language,kind:'card'|'crown',accusative=false){if(lang==='nl')return n+' '+(kind==='card'?(n===1?'kaart':'kaarten'):(n===1?'kroon':'kronen'));if(lang==='en')return n+' '+(kind==='card'?'card':'crown')+(n===1?'':'s');const forms=kind==='card'?[accusative?'карту':'карта','карти','карт']:['корона','корони','корон'];const category=new Intl.PluralRules('uk').select(n);return n+' '+forms[category==='one'?0:category==='few'?1:2]}
 export function translate(text:string,lang:Language):string{text=legacyGameText[text]||text;if(lang==='en')return text;if(reliabilityDictionary[lang][text])return reliabilityDictionary[lang][text];const dictionary=lang==='nl'?nl:uk;if(dictionary[text])return dictionary[text];for(const [pattern,replace] of (lang==='nl'?nlDynamic:dynamic)){const match=text.match(pattern);if(match)return replace(match)}return text}
