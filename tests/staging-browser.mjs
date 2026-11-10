@@ -35,8 +35,12 @@ try{
  await hostPage.goto(origin+'/',{waitUntil:'domcontentloaded'});
  await hostPage.locator('.entry input').first().fill('E2E Mobile Host');
  await hostPage.getByRole('button',{name:/Create a family room/}).click();
- await hostPage.locator('.roomtop button b').waitFor({timeout:20000});
- const code=(await hostPage.locator('.roomtop button b').innerText()).trim();
+ await hostPage.locator('.roomtop .invite-room-code b').waitFor({timeout:20000});
+ const code=(await hostPage.locator('.roomtop .invite-room-code b').innerText()).trim();
+ assert.equal(await hostPage.locator('.lobby-invite-controls').count(),1,'Lobby should show invite controls beside player seats');
+ assert.equal(await hostPage.locator('.lobby-invite-controls .invite-copy').count(),1,'Copy invite must remain accessible in the lobby');
+ // Web Share availability varies by Chromium build; Copy must work with or without it.
+ assert(await hostPage.locator('.lobby-invite-controls .invite-copy').isVisible(),'Lobby copy action should be visible');
  assert.match(code,/^[A-F0-9]{6}$/);
  await guestPage.goto(origin+'/',{waitUntil:'domcontentloaded'});
  await guestPage.locator('.entry input').first().fill('E2E Mobile Guest');
@@ -51,6 +55,8 @@ try{
  await wait(guestPage,'.seat',8,25000);
  await checkLayout(hostPage,'host-390');
  await checkLayout(guestPage,'guest-390');
+ assert.equal(await hostPage.locator('.lobby-invite-controls').count(),1,'8-player lobby must retain invite controls');
+ assert(await hostPage.getByText('All seats are taken. New players cannot join this table.').isVisible(),'Full lobby must explain joining is unavailable');
  await hostPage.setViewportSize({width:320,height:740});
  await guestPage.setViewportSize({width:320,height:740});
  await checkLayout(hostPage,'host-320');
@@ -59,6 +65,8 @@ try{
  await hostPage.getByRole('button',{name:/Deal the cards/}).click();
  await hostPage.locator('.seat-rank').first().waitFor({timeout:20000});
  await wait(hostPage,'.seat-rank',8);
+ assert.equal(await hostPage.locator('.roomtop .invite-controls').count(),1,'Active game must keep invitation actions in the compact room header');
+ assert.equal(await hostPage.locator('.roomtop .invite-copy').count(),1,'Active game must retain copy invitation');
  assert((await hostPage.locator('.hand .card').count())>0,'Dealt hand must be visible');
  await hostPage.locator('.score-chip').click();
  const dialog=hostPage.locator('dialog.table-dialog[open]');
@@ -69,15 +77,15 @@ try{
  assert(await dialog.getByText(/ROUND 1/i).count(),'Round information dialog unavailable');
  await dialog.getByRole('button',{name:'Close panel'}).click();
  await hostPage.reload({waitUntil:'domcontentloaded'});
- await hostPage.locator('.roomtop button b').waitFor({timeout:25000});
- assert.equal((await hostPage.locator('.roomtop button b').innerText()).trim(),code,'Refresh must restore same room');
+ await hostPage.locator('.roomtop .invite-room-code b').waitFor({timeout:25000});
+ assert.equal((await hostPage.locator('.roomtop .invite-room-code b').innerText()).trim(),code,'Refresh must restore same room');
  await wait(hostPage,'.seat',8);
  assert.equal(await hostPage.locator('.seat.is-me').count(),1,'Refresh must restore exactly one owned seat');
  await checkLayout(hostPage,'restored-host-320');
  await guestPage.reload({waitUntil:'domcontentloaded'});
  await wait(guestPage,'.seat',8,25000);
  assert.equal(await guestPage.locator('.seat.is-me').count(),1,'Guest reconnect must restore seat');
- assert.equal((await guestPage.locator('.roomtop button b').innerText()).trim(),code);
+ assert.equal((await guestPage.locator('.roomtop .invite-room-code b').innerText()).trim(),code);
  await checkLayout(guestPage,'restored-guest-320');
  assert.equal(errors.length,0,'Uncaught browser errors: '+errors.join('; '));
  console.log('Passed: two real Chromium clients, mobile 320/390px, 8-player lobby, scores, round status, and reconnects.');
