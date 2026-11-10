@@ -45,7 +45,7 @@ export function InviteControls({ code, lang, testMode = false, showCode = false,
   return <div className={'invite-controls'+(isLobby ? ' lobby-invite-controls' : '')}>
     <div className="invite-controls-row">
       {showCode && <span className="invite-room-code">{t('Room')} <b>{code}</b></span>}
-      {nativeShare && <button type="button" className="invite-share" onClick={share}>{t('Share invitation')}</button>}
+      {nativeShare && <button type="button" className="invite-share" onClick={share} aria-label={t('Share invitation')}>{t('Share')}</button>}
       <button type="button" className="outline invite-copy" onClick={copy}>{t(nativeShare ? 'Copy link' : 'Copy invitation')}</button>
     </div>
     {feedback && <p className="invite-feedback" role="status" aria-live="polite">{feedback}</p>}
