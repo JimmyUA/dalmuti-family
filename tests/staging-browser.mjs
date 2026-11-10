@@ -63,7 +63,7 @@ try{
  await checkLayout(guestPage,'guest-320');
  assert.equal(await hostPage.getByRole('button',{name:'Add computer player'}).isDisabled(),true,'8-player room must be full');
  await hostPage.getByRole('button',{name:/Deal the cards/}).click();
- await hostPage.locator('.seat-rank').first().waitFor({timeout:20000});
+ await hostPage.locator('.seat-rank:visible').first().waitFor({timeout:20000});
  await wait(hostPage,'.seat-rank',8);
  assert.equal(await hostPage.locator('.roomtop .invite-controls').count(),1,'Active game must keep invitation actions in the compact room header');
  assert.equal(await hostPage.locator('.roomtop .invite-copy').count(),1,'Active game must retain copy invitation');
