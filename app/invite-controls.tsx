@@ -45,7 +45,7 @@ export function InviteControls({ code, lang, testMode = false, showCode = false,
   return <div className={'invite-controls'+(isLobby ? ' lobby-invite-controls' : '')}>
     <div className="invite-controls-row">
       {showCode && <span className="invite-room-code">{t('Room')} <b>{code}</b></span>}
-      {nativeShare && <button type="button" className="invite-share" onClick={share} aria-label={t('Share invitation')}>{isLobby && <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8.7 10.5l6.6-3.8M8.7 13.5l6.6 3.8"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="5" r="3"/><circle cx="18" cy="19" r="3"/></svg>}{t('Share')}</button>}
+      {nativeShare && <button type="button" className={isLobby ? "outline invite-share" : "invite-share"} onClick={share} aria-label={t('Share invitation')}>{isLobby && <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8.7 10.5l6.6-3.8M8.7 13.5l6.6 3.8"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="5" r="3"/><circle cx="18" cy="19" r="3"/></svg>}{t('Share')}</button>}
       <button type="button" className="outline invite-copy" onClick={copy}>{t(nativeShare ? 'Copy link' : 'Copy invitation')}</button>
     </div>
     {feedback && <p className="invite-feedback" role="status" aria-live="polite">{feedback}</p>}
