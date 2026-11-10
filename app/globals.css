@@ -177,3 +177,38 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
   .game-active .roomtop>div:first-child{display:none}
   .game-active .roomtop{justify-content:flex-end}
 }
+
+/* The waiting room uses the same warm shell, player tiles and felt as play. */
+.game-lobby{max-width:1100px;padding-inline:20px}
+.game-lobby>header{height:auto;min-height:62px;padding-block:8px;gap:8px}
+.game-lobby .brand{color:#a17a37}
+.game-lobby .brand span{color:#173d34;text-transform:lowercase;font:21px Georgia,serif;letter-spacing:-.7px}
+.game-lobby .brand small,.game-lobby .roomtop .eyebrow,.game-lobby .felt-round-tools{display:none}
+.game-lobby .roomtop{flex-direction:row;align-items:center;gap:12px;margin:14px 0}
+.game-lobby .roomtop h2{font:clamp(21px,5vw,29px)/1.15 Georgia,serif;margin:0}
+.game-lobby .roomtop .invite-room-code{white-space:nowrap;flex-shrink:0}
+.game-lobby .board{padding:0;border:0;background:transparent}
+.game-lobby .seats{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.game-lobby .seat{background:#eaece2;border:1px solid transparent;border-radius:13px;padding:10px;gap:8px}
+.game-lobby .seat.is-me{background:#efe9d7;border-color:#c5a263}
+.game-lobby .seat b{overflow-wrap:anywhere}
+.game-lobby .seat .avatar{background:#d8dfd1;font:15px Georgia,serif}
+.game-lobby .seat small{color:#52634e}
+.game-lobby .felt{border-radius:23px;background:radial-gradient(ellipse at 50% 0,#2a5749,#163e34 80%);min-height:0;padding:20px 16px 24px}
+.game-lobby .table-stage{overflow:visible;flex:none}
+.game-lobby .felt h2{font:26px/1.15 Georgia,serif;margin:0 0 6px}
+.game-lobby .felt .lobby-capacity{font-size:12px;margin:0 0 14px}
+.game-lobby .lobby-invite-controls{margin:0 0 12px}
+.game-lobby .felt .invite-feedback,.game-lobby .felt .invite-full-hint{color:#e4ecdf}
+.game-lobby .felt button{min-height:44px;padding:9px 13px;border-radius:10px}
+.game-lobby .felt .lobby-deal{width:min(100%,360px);margin-top:4px;background:#edcb86;color:#213c34}
+.game-lobby .lobby-actions{margin-top:6px}
+.game-lobby .felt .lobby-help{margin:8px 0}
+@media(max-width:600px){
+ .game-lobby{padding-inline:12px}
+ .game-lobby>header{min-height:52px}
+ .game-lobby .header-controls{gap:8px}
+ .game-lobby .seats{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .game-lobby .seat{padding:8px}
+ .game-lobby .felt{padding:16px 12px}
+}

@@ -345,15 +345,17 @@ try {
     reset({...state,phase:'tax'});assert.equal((await invoke(request)).status,400);
     reset(state);
     assert.equal((await invoke(pollBody)).data.canSkipComputers,true);
-    const pair=await Promise.all([invoke(request),invoke({...request,requestId:crypto.randomUUID()})]);
+    const attempts=[request,{...request,requestId:crypto.randomUUID()}];
+    const pair=await Promise.all(attempts.map(invoke));
     assert.equal(pair.filter(r=>r.status===200).length,1);
     assert.equal(pair.filter(r=>r.status===409).length,1);
-    let snapshot=pair.find(r=>r.status===200).data;
+    const winner=pair.findIndex(r=>r.status===200);
+    let snapshot=pair[winner].data;
     assert.equal(snapshot.version,1);assert.equal(snapshot.canSkipComputers,false);
     assert(!('skipComputerWait' in snapshot));
     // A duplicate acknowledgement must not execute another batch.
     const beforeReplay=fixture.sqlite.prepare('SELECT state FROM rooms').get().state;
-    assert.equal((await invoke(request)).status,200);
+    assert.equal((await invoke(attempts[winner])).status,200);
     assert.equal(fixture.sqlite.prepare('SELECT state FROM rooms').get().state,beforeReplay);
     if(seats===8){assert.equal(snapshot.skippingComputers,true);assert(snapshot.computerWaitMs===0);}
     for(let batch=0;snapshot.phase!=='results'&&batch<100;batch++){
