@@ -58,6 +58,7 @@ jobs:
           node tests/strategy.mjs
           node tests/table-events.mjs
           node tests/growth-analytics.mjs
+          node tests/invite-sharing.mjs
 
       - name: Test legacy room compatibility and Phase 3 staging safeguards
         run: |
