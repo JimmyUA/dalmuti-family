@@ -201,6 +201,9 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .game-lobby .lobby-invite-controls{margin:0 0 12px}
 .game-lobby .felt .invite-feedback,.game-lobby .felt .invite-full-hint{color:#e4ecdf}
 .game-lobby .felt button{min-height:44px;padding:9px 13px;border-radius:10px}
+.game-lobby .felt .invite-share{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#f4efde;color:#173d34;border:1px solid transparent}
+.game-lobby .felt .invite-share:hover{background:#fff8e8}
+.game-lobby .felt .invite-share:focus-visible{outline:2px solid #edcb86;outline-offset:3px}
 .game-lobby .felt .lobby-deal{width:min(100%,360px);margin-top:4px;background:#edcb86;color:#213c34}
 .game-lobby .lobby-actions{margin-top:6px}
 .game-lobby .felt .lobby-help{margin:8px 0}
