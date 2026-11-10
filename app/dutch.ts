@@ -78,6 +78,17 @@ Object.assign(nl,{
   "playing": "Spelen",
   "results": "Resultaten"
 });
+Object.assign(nl,{
+  "Share": "Delen",
+  "Share invitation": "Uitnodiging delen",
+  "Copy link": "Kopieer link",
+  "Copy invitation": "Kopieer uitnodiging",
+  "Sharing completed.": "Delen via je apparaat is afgerond.",
+  "Invitation link copied!": "Uitnodigingslink gekopieerd!",
+  "Automatic copying is unavailable. Select the link below and copy it manually.": "Automatisch kopiëren is niet beschikbaar. Selecteer de onderstaande link en kopieer deze handmatig.",
+  "Invitation link to copy manually": "Uitnodigingslink om handmatig te kopiëren",
+  "All seats are taken. New players cannot join this table.": "Alle plaatsen zijn bezet. Nieuwe spelers kunnen niet deelnemen aan deze tafel.",
+});
 export const nlLabels=['','Vorst','Aartsbisschop','Maarschalk','Barones','Abdis','Ridder','Naaister','Metselaar','Kok','Herderin','Steenhouwer','Boer','Nar'];
 export const nlDynamic:Array<[RegExp,(m:RegExpMatchArray)=>string]>=[
 [/^(.*) is now the host$/,m=>m[1]+' is nu de gastheer'],
