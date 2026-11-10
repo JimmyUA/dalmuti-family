@@ -41,6 +41,8 @@ Implementation is proposed in [the growth analytics design](GROWTH_ANALYTICS.md)
 - **Why first:** know whether sharing creates real multiplayer sessions rather than just clicks.
 
 ### GROW-02 · One-tap mobile share for an existing room
+
+Implementation proposed in [Invitation Sharing](INVITATION_SHARING.md); mark complete after PR CI and mobile staging acceptance.
 - [ ] Extend the existing **Copy invite** control with native system sharing where available (including WhatsApp via the system share sheet); retain one-tap copy as a reliable fallback.
 - [ ] Use an inviting, localized message (EN/NL/UK) containing the room link and short description; do not include players' names or game secrets.
 - [ ] Place the action near available seats in the lobby and keep it accessible during play without covering cards or table actions.
