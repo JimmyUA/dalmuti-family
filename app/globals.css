@@ -160,10 +160,6 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .invite-controls .invite-copy{gap:0}
 .invite-feedback,.invite-full-hint{margin:5px 0 0;color:#315843;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 .invite-manual-link{max-width:320px;min-width:0;margin:5px 0 0;padding:10px 9px;font-size:12px;user-select:all}
-.lobby-invite-controls{align-self:center;max-width:100%;width:100%;margin:-3px 0 10px;text-align:center}
-.lobby-invite-controls .invite-controls-row{justify-content:center}
-.lobby-invite-controls .invite-feedback,.lobby-invite-controls .invite-full-hint{margin:5px auto 0}
-.lobby-invite-controls .invite-manual-link{margin:5px auto 0}
 .game-active .roomtop .invite-controls{margin-left:auto;text-align:right}
 .game-active .roomtop .invite-controls button{min-height:34px}
 @media(max-width:600px){
@@ -202,7 +198,6 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
 .game-lobby .felt .invite-feedback,.game-lobby .felt .invite-full-hint{color:#e4ecdf}
 .game-lobby .felt button{min-height:44px;padding:9px 13px;border-radius:10px}
 .game-lobby .felt .invite-share{display:inline-flex;align-items:center;justify-content:center;gap:7px}
-.game-lobby .felt .invite-controls-row button:focus-visible{outline:2px solid #edcb86;outline-offset:3px}
 .game-lobby .felt .lobby-deal{width:min(100%,360px);margin-top:4px;background:#edcb86;color:#213c34}
 .game-lobby .lobby-actions{margin-top:6px}
 .game-lobby .felt .lobby-help{margin:8px 0}
@@ -213,4 +208,21 @@ p,.eyebrow,.facts,.divider,.seat small,.seat>span:last-child,.handtop small,.han
  .game-lobby .seats{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
  .game-lobby .seat{padding:8px}
  .game-lobby .felt{padding:16px 12px}
+}
+
+/* Room controls stay in the same place from lobby to play. */
+.game-lobby .header-controls>.quiet{display:none}
+.game-lobby .roomtop,.game-active .roomtop{justify-content:flex-end;margin:4px 0 10px;min-height:0}
+.game-lobby .roomtop>div:first-child,.game-active .roomtop>div:first-child{display:none}
+.roomtop .invite-controls{margin-left:auto;text-align:right}
+.game-lobby .roomtop .invite-controls-row button,.game-active .roomtop .invite-controls-row button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:36px;padding:6px 9px;font-size:11px;background:transparent;color:#264b3c;border:1px solid #bdc8b9}
+.game-active .roomtop .invite-controls-row button::after{content:none}
+.game-lobby .roomtop .invite-room-code,.game-active .roomtop .invite-room-code{font-size:11px}
+.game-lobby .roomtop .invite-room-code b,.game-active .roomtop .invite-room-code b{font-size:12px}
+@media(max-width:600px){
+ .game-lobby>header,.game-active>header{height:52px;min-height:52px;padding:5px 0;border-bottom:0;flex-wrap:nowrap}
+ .game-lobby .header-controls,.game-active .header-controls{gap:7px;flex-wrap:nowrap}
+ .game-lobby .brand,.game-active .brand{gap:4px;font-size:26px}
+ .game-lobby .brand span,.game-active .brand span{font-size:20px}
+ .game-lobby .language-label select,.game-active .language-label select{font-size:10px;max-width:78px;padding:6px 3px}
 }
