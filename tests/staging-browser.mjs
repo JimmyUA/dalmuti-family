@@ -37,10 +37,10 @@ try{
  await hostPage.getByRole('button',{name:/Create a family room/}).click();
  await hostPage.locator('.roomtop .invite-room-code b').waitFor({timeout:20000});
  const code=(await hostPage.locator('.roomtop .invite-room-code b').innerText()).trim();
- assert.equal(await hostPage.locator('.lobby-invite-controls').count(),1,'Lobby should show invite controls beside player seats');
- assert.equal(await hostPage.locator('.lobby-invite-controls .invite-copy').count(),1,'Copy invite must remain accessible in the lobby');
+ assert.equal(await hostPage.locator('.roomtop .invite-controls').count(),1,'Lobby should show invite controls in the room header');
+ assert.equal(await hostPage.locator('.roomtop .invite-controls .invite-copy').count(),1,'Copy invite must remain accessible in the lobby');
  // Web Share availability varies by Chromium build; Copy must work with or without it.
- assert(await hostPage.locator('.lobby-invite-controls .invite-copy').isVisible(),'Lobby copy action should be visible');
+ assert(await hostPage.locator('.roomtop .invite-controls .invite-copy').isVisible(),'Lobby copy action should be visible');
  assert.match(code,/^[A-F0-9]{6}$/);
  await guestPage.goto(origin+'/',{waitUntil:'domcontentloaded'});
  await guestPage.locator('.entry input').first().fill('E2E Mobile Guest');
@@ -55,7 +55,7 @@ try{
  await wait(guestPage,'.seat',8,25000);
  await checkLayout(hostPage,'host-390');
  await checkLayout(guestPage,'guest-390');
- assert.equal(await hostPage.locator('.lobby-invite-controls').count(),1,'8-player lobby must retain invite controls');
+ assert.equal(await hostPage.locator('.roomtop .invite-controls').count(),1,'8-player lobby must retain invite controls');
  assert(await hostPage.getByText('All seats are taken. New players cannot join this table.').isVisible(),'Full lobby must explain joining is unavailable');
  await hostPage.setViewportSize({width:320,height:740});
  await guestPage.setViewportSize({width:320,height:740});
