@@ -112,6 +112,7 @@ These were recorded in earlier planning discussions; reconcile against the old l
 - [ ] Contextual taxation guidance.
 - [ ] Optional focus/full-screen mode and nonintrusive event/history access on mobile, if still needed after the shipped table redesign.
 - [ ] Contact form as an alternative to the already available help/feedback email; assess spam/privacy costs before implementing.
+- [ ] **P3 / low — simplify invitation controls (GROW-02 follow-up).** Consider replacing the separate **Share** and **Copy link** buttons with one context-aware **Invite friends** action: open the native share sheet when available, otherwise copy the invite link; on failed sharing, fall back to copying, and on denied clipboard access show a selectable link. A cancelled share must do nothing. Before removing the dedicated Copy link option, check that Android and iOS share sheets make copying discoverable, and verify compact lobby/gameplay layouts on mobile and desktop. **Deferred UX polish; no immediate implementation.**
 - [ ] Recent tables/room switching — tracked above as GROW-07.
 - Staging and controlled release are **CI/CD work**, tracked in [CI_CD.md](CI_CD.md), not duplicate feature backlog entries.
 
