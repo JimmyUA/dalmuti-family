@@ -23,6 +23,7 @@ Crownturn keeps using Cloudflare Web Analytics for broad traffic/performance. GR
 | `landing_loaded` | Main game page loaded without a valid six-character invitation URL; reloads count again | Allowed UTM source or `direct` |
 | `invite_landing` | Main game page loaded with a valid-format `?room=` parameter; not proof the code exists or a join occurred | Allowed UTM source or `invite` |
 | `invite_copied` | User successfully copied an invitation from a normal room; this **does not prove it was shared** | `invite` |
+| `invite_shared` | The native device share API resolved without an error; **does not prove message delivery or that anyone joined** | `invite` |
 | `room_created` | Server committed a new non-practice, non-test room | `server` |
 | `practice_started` | Server committed a new bot-practice room (creation, not a completed match) | `server` |
 | `human_joined` | Server committed a **new** human seat in a non-test room; this might be a manually entered code | `server` |
